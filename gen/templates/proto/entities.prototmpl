@@ -1,0 +1,143 @@
+syntax = "proto3";
+package grpc;
+
+option go_package = "{{ .RootPkg }}{{ .Cfg.OutputPath }}/grpc";
+
+{{- range .ProtoImports }}
+import "{{ . }}";
+{{- end }}
+{{- $sch := . }}
+
+{{- range .Entities }}
+{{- $e := . }}
+{{ range $i, $f := .Fields }}
+{{- if isEnum . }}
+enum {{ pascal $e.Name }}{{ pascal .Name }}Enum {
+    {{- range $i, $enum := .Enum }}
+    {{ pascal $e.Name }}{{ pascal $f.Name }}{{ pascal $enum }} = {{ $i }};
+    {{- end }}
+}
+{{- end }}
+{{- end }}
+
+message {{ .Name }}EdgesRequest {
+{{- range .Edges }}
+{{- if .WithRead }}
+    optional {{ .EntityName }}EdgesRequest With{{ pascal .Name }} = {{ .Order }};
+{{- end }}
+{{- end }}
+}
+
+message {{ .Name }}EdgesResponse {
+{{- range .Edges }}
+{{- if .WithRead }}
+    {{ if .ToOne }}optional{{ else }}repeated{{ end }} {{ .EntityName }} {{ pascal .Name }} = {{ .Order }};
+{{- end }}
+{{- end }}
+}
+
+service {{ .Name }}Service {
+{{- if needReadOneOp $sch . }}
+    rpc Read{{ .Name }} (Read{{ .Name }}Request) returns ({{ .Name }}) {}
+{{- end }}
+{{- if needReadManyOp $sch . }}
+    rpc ReadMany{{ .Name }} (ReadMany{{ .Name }}Request) returns (ReadMany{{ .Name }}Response) {}
+{{- end }}
+{{- if needCreateOp $sch . }}
+    rpc Create{{ .Name }} (Create{{ .Name }}Request) returns ({{ .Name }}) {}
+{{- end }}
+{{- if needUpdateOp $sch . }}
+    rpc Update{{ .Name }} (Update{{ .Name }}Request) returns ({{ .Name }}) {}
+{{- end }}
+{{- if needDeleteOp $sch . }}
+    rpc Delete{{ .Name }} (Delete{{ .Name }}Request) returns (Delete{{ .Name }}Response) {}
+{{- end }}
+}
+
+message {{ .Name }} {
+    {{- $lastOrder := 0 }}
+    {{- range .Fields }}
+    {{- if techField . }}
+    {{- continue }}
+    {{- end }}
+    {{ if not .Required }}optional {{ end}}{{ if isEnum . }}{{ pascal $e.Name }}{{ pascal .Name }}Enum{{ else }}{{ .Type.Type.ProtoTypeName }}{{ end }} {{ pascal .Name }} = {{ .Order }};
+    {{ $lastOrder = maxInt .Order $lastOrder }}
+    {{- end }}
+    {{ .Name }}EdgesResponse Edges = {{ add $lastOrder 1 }};
+}
+
+{{ $idField := .GetIDField }}
+{{- if needReadOneOp $sch . }}
+message Read{{ .Name }}Request {
+    string ID = 1;
+    {{- if .HasReadEdges }}
+        optional {{ .Name }}EdgesRequest With = 2;
+    {{- end }}
+}
+{{- end }}
+
+{{ $idField := .GetIDField }}
+{{- if needReadManyOp $sch . }}
+message ReadMany{{ .Name }}Request {
+    optional int64 Page = 1;
+    optional int64 ItemsPerPage = 2;
+    {{- if .HasReadEdges }}
+    optional {{ .Name }}EdgesRequest With = 3;
+    {{- end }}
+    {{- range .Fields }}
+    {{- if needFilter $sch . }}
+    optional {{ if isEnum . }}{{ pascal $e.Name }}{{ pascal .Name }}Enum{{ else }}{{ .Type.Type.ProtoTypeName }}{{ end }} Filter{{ pascal .Name }} = {{ add .Order 3 }};
+    {{- end }}
+    {{- end }}
+}
+
+message ReadMany{{ .Name }}Response {
+    repeated {{ .Name }} Items = 1;
+}
+{{- end }}
+
+{{- if needCreateOp $sch . }}
+message Create{{ .Name }}Request {
+    {{- range .Fields }}
+        {{- if techField . }}
+            {{- continue }}
+        {{- end }}
+        {{- if eq .Name "id" }}
+        {{- continue }}
+        {{- end }}
+    {{ if not .Required }}optional {{ end}}{{ if isEnum . }}{{ pascal $e.Name }}{{ pascal .Name }}Enum{{ else }}{{ .Type.Type.ProtoTypeName }}{{ end }} {{ pascal .Name }} = {{ .Order }};
+    {{- end }}
+}
+{{- end }}
+
+{{- if needUpdateOp $sch . }}
+message Update{{ .Name }}Request {
+    {{- range .Fields }}
+        {{- if techField . }}
+            {{- continue }}
+        {{- end }}
+        {{- if eq .Name "id" }}
+        {{ if isEnum . }}{{ pascal $e.Name }}{{ pascal .Name }}Enum{{ else }}{{ .Type.Type.ProtoTypeName }}{{ end }} {{ pascal .Name }} = {{ .Order }};
+        {{- continue }}
+        {{- end }}
+    optional {{ .Type.Type.ProtoTypeName }} {{ pascal .Name }} = {{ .Order }};
+    {{- end }}
+}
+{{- end }}
+
+{{- if needDeleteOp $sch . }}
+message Delete{{ .Name }}Request {
+    {{- range .Fields }}
+        {{- if not (eq .Name "id") }}
+        {{- continue }}
+        {{- end }}
+    {{ .Type.Type.ProtoTypeName }} {{ pascal .Name }} = {{ .Order }};
+    {{- end }}
+}
+
+message Delete{{ .Name }}Response {
+    string Status = 1;
+}
+{{- end }}
+
+{{- end }}

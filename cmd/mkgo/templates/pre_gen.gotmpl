@@ -1,0 +1,18 @@
+package main
+
+import (
+    "github.com/wheissd/mkgo/lib"
+    {{- if gt (len .Entities) 0 }}
+    . "{{ .SchemaPath }}"
+    "{{ .GenPath }}"
+    {{- end }}
+)
+
+var entities = []lib.PreEntity{
+    {{- range .Entities }}
+        {
+            Schema: {{ .Schema }}{},
+            Model: {{ .Model }}{},
+        },
+    {{- end }}
+}

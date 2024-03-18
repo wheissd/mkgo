@@ -1,0 +1,12 @@
+
+{{ define "queryEdges" }}
+if params.With != nil {
+{{- $e := . }}
+{{- range .Edges }}
+    if params.With.{{ pascal .Name }} != nil {
+        q = q.With{{ pascal .Name }}(applyWith{{ pascal .EntityName }}(params.With.{{ pascal .Name }}))
+    }
+{{- end }}
+}
+
+{{ end }}

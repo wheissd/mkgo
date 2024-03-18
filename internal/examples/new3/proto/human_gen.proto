@@ -1,0 +1,28 @@
+syntax = "proto3";
+package grpc;
+
+option go_package = "api/grpc";
+
+service HumanService {
+    rpc ReadHuman (ReadHumanRequest) returns (Human) {}
+}
+
+message Human {
+    string ID = 1;
+    string Name = 2;
+}
+
+
+message ReadHumanRequest {
+    string ID = 1;
+}
+
+
+message ReadManyHumanRequest {
+    string ID = 1;
+}
+
+message ReadManyHumanResponse {
+    Human Items = 1;
+}
+

@@ -1,0 +1,19 @@
+package main
+
+import (
+    "go.uber.org/fx"
+    "{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}app"
+    "{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}api/http"
+)
+
+func main() {
+    app := fx.New(
+        append(
+            app.DI(),
+            http.Module,
+            )...,
+    )
+
+    <-app.Wait()
+}
+

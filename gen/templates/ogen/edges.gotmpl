@@ -1,0 +1,48 @@
+package ogen
+
+import (
+{{ $pkg := .Pkg }}
+{{ $sch := . }}
+{{- if gt (len .Entities) 0 }}
+    "errors"
+    "strings"
+    "{{ $pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
+{{- end }}
+)
+
+{{- range .Entities }}
+    {{- $entity := . }}
+func parseWith{{ $entity.Name }}(level int, query string, e *service.{{ pascal $entity.Name }}QueryEdges) (*service.{{ pascal $entity.Name }}QueryEdges, error) {
+    {{- if gt $sch.Cfg.WithMaxNesting 0 }}
+    if level > {{ $sch.Cfg.WithMaxNesting }} {
+        return nil, errors.New("max nesting reached")
+    }
+    level++
+    {{- end }}
+    {{- if gt (len .Edges) 0 }}
+    currentPos, queryRemainder, found := strings.Cut(query, ",")
+    {{- end }}
+    if e == nil {
+        e = &service.{{ .Name }}QueryEdges{}
+    }
+    {{- if gt (len .Edges) 0 }}
+    var err error
+    switch currentPos {
+    {{- range .Edges }}
+        case "{{ .Name }}":
+            e.{{ pascal .Name }}, err = parseWith{{ .EntityName }}(level, queryRemainder, e.{{ pascal .Name }})
+            if err != nil {
+                return nil, err
+            }
+    {{- end }}
+    }
+
+    if !found && query == "" {
+        return e, nil
+    }
+    return nil, errors.New("invalid with param")
+    {{- else }}
+        return e, nil
+    {{- end }}
+}
+{{- end }}

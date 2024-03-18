@@ -1,0 +1,23 @@
+package service
+
+{{- $pkg := .Pkg }}
+import (
+{{- if gt (len .Entities) 0 }}
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+{{- end }}
+)
+
+{{- range .Entities }}
+    {{ $e := . }}
+func applyWith{{ pascal $e.Name }}(edges *{{ pascal .Name }}QueryEdges) func(*gen.{{ pascal .Name }}Query) {
+    return func(q *gen.{{ pascal .Name }}Query) {
+    {{- if ne .Edges nil }}
+{{- range .Edges }}
+        if edges.{{ pascal .Name }} != nil {
+            q.With{{ pascal .Name }}()
+        }
+{{- end }}
+    {{- end }}
+    }
+}
+{{- end }}

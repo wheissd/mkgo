@@ -1,0 +1,26 @@
+OutputPath: api
+OpenApiPath: openapi/api.json
+Mode: default
+Transport: grpc
+Title: Your API title
+Servers:
+  - http://localhost:9000
+EnableDefaultCreate: true
+# enable update by default,
+# you can enable/disable explicitly for each model in genOpenapi annotations
+EnableDefaultUpdate: true
+# enable delete by default,
+# you can enable/disable explicitly for each model in genOpenapi annotations
+EnableDefaultDelete: true
+# enable readOne by default
+# you can enable/disable explicitly for each model in genOpenapi annotations
+EnableDefaultReadOne: true
+# enable readMany by default
+# you can enable/disable explicitly for each model in genOpenapi annotations
+EnableDefaultReadMany: true
+# make fields public by default, set field annotations to hide
+FieldsPublicByDefault: true
+# enable edges read by default, set edge annotations to hide
+EnableEdgeReadByDefault: true
+# enable edges write by default, set edge annotations to hide
+EnableEdgeWriteByDefault: true

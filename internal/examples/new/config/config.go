@@ -1,0 +1,28 @@
+package config
+
+type Config struct {
+	API  API
+	GRPC GRPC
+	DB   DB
+}
+
+type API struct {
+	HTTP HTTP
+}
+
+type HTTP struct {
+	Addr string
+	Port string
+}
+
+type GRPC struct {
+	HTTP HTTP
+}
+
+type DB struct {
+	Default Postgres
+}
+
+type Postgres struct {
+	URL string
+}

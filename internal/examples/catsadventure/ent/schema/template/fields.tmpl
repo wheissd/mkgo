@@ -1,0 +1,6 @@
+{{ define "model/fields/additional" }}
+    {{- if eq $.Name "Cat" }}
+        // PhantomField defined by template.
+        PhantomField string `json:"phantom_field,omitempty"`
+    {{- end }}
+{{ end }}

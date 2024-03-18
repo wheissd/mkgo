@@ -1,0 +1,12 @@
+Env: local
+API:
+  HTTP:
+    Addr: 0.0.0.0
+    Port: 8080
+GRPC:
+  HTTP:
+    Addr: 0.0.0.0
+    Port: 9090
+DB:
+  Default:
+    URL: host=localhost port=5432 user=your_user password=your_password dbname=default sslmode=disable

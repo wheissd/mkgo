@@ -1,0 +1,28 @@
+syntax = "proto3";
+package grpc;
+
+option go_package = "api/grpc";
+
+service DefaultModelService {
+    rpc ReadDefaultModel (ReadDefaultModelRequest) returns (DefaultModel) {}
+}
+
+message DefaultModel {
+    string ID = 1;
+    string Name = 2;
+}
+
+
+message ReadDefaultModelRequest {
+    string ID = 1;
+}
+
+
+message ReadManyDefaultModelRequest {
+    string ID = 1;
+}
+
+message ReadManyDefaultModelResponse {
+    DefaultModel Items = 1;
+}
+

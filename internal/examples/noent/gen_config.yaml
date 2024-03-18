@@ -1,0 +1,6 @@
+OutputPath: api
+OpenApiPath: openapi/api.json
+Mode: default
+Title: Your API title
+Servers:
+  - http://localhost:9000

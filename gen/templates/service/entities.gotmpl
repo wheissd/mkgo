@@ -1,0 +1,136 @@
+package service
+
+{{- $pkg := .Pkg }}
+{{- $entPath := .EntPath }}
+import (
+	{{- range (index .Imports "entities") }}
+		"{{ . }}"
+	{{- end }}
+	{{- if gt (len .Entities) 0 }}
+		"{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+	{{- end }}
+	"github.com/google/uuid"
+)
+
+type Opt[T any] struct {
+	isSet bool
+	val   T
+}
+
+func NewOptP[T any](v *T) Opt[T] {
+	if v != nil {
+		return Opt[T]{
+		val: *v,
+		}
+	}
+	return Opt[T]{}
+}
+
+func (o *Opt[T])Set(v T) {
+	o.val = v
+	o.isSet = true
+}
+
+func (o *Opt[T])IsSet() bool {
+	return o.isSet
+}
+
+func (o *Opt[T])Get() T {
+	return o.val
+}
+
+{{- $sch := .  }}
+{{- range .Entities }}
+	{{ $e := . }}
+type {{ .Name }} struct {
+	{{ range .Fields }}
+	{{ pascal .Name }} {{ if or (not .Required) .Type.IsPointer }}Opt[{{ end }}{{ fieldType . }}{{ if or (not .Required) .Type.IsPointer }}]{{ end }}  `json:"{{ snake .Name }}"`
+	{{- end }}
+	Edges {{ .Name }}Edges `json:"edges"`
+}
+
+type {{ .Name }}Edges struct {
+{{- range .Edges }}
+	{{ pascal .Name }} {{ if .ToOne }}Opt[{{ pascal .EntityName }}]{{ else }}[]{{ pascal .EntityName }}{{ end }};
+{{- end }}
+}
+
+func New{{ .Name }}(e *gen.{{ .Name }}) {{ .Name }} {
+	res := {{ .Name }} {
+	{{- range .Fields }}
+		{{- if .Phantom }}{{ continue }}{{end}}
+		{{ pascal .Name }}: {{ if eq .Type.Type.Name "enum" }}string({{ end }}{{ if .Type.IsPointer }}NewOptP({{ end }}e.{{ pascal .Name }}{{ if .Type.IsPointer }}){{ end }}{{ if eq .Type.Type.Name "enum" }}){{ end }},
+	{{- end }}
+	}
+	{{- range .Edges }}
+	if e.Edges.{{ pascal .Name }} != nil {
+		res.Edges.{{ pascal .Name }}{{- if .ToOne }}.Set(New{{ .EntityName }}(e.Edges.{{ pascal .Name }})){{ else }} = make([]{{ .EntityName }}, 0, len(e.Edges.{{ pascal .Name }})){{ end }}
+		{{- if not .ToOne }}
+			for i := range e.Edges.{{ pascal .Name}} {
+				res.Edges.{{ pascal .Name}} = append(res.Edges.{{ pascal .Name}}, New{{ .EntityName }}(e.Edges.{{ pascal .Name}}[i]))
+			}
+		{{- end }}
+	}
+	{{- end }}
+	return res
+}
+
+type Create{{ .Name }} struct {
+	{{ range .Fields }}
+		{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
+		{{ pascal .Name }} {{ if not .Required }}Opt[{{ end }}{{ fieldType . }}{{ if not .Required }}]{{ end }}  `json:"{{ snake .Name }}"`
+		{{- end }}
+	{{- end }}
+}
+
+type Update{{ .Name }} struct {
+	{{ range .Fields }}
+		{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
+		{{ pascal .Name }} Opt[{{ updateFieldType . }}]  `json:"{{ snake .Name }}"`
+		{{- end }}
+	{{- end }}
+}
+
+type {{ .Name }}List struct {
+	Items []{{ .Name }}
+}
+
+type {{ .Name }}QueryEdges struct {
+	{{- range .Edges }}
+		{{ pascal .Name }} *{{ pascal .EntityName }}QueryEdges
+	{{- end }}
+}
+
+type {{ .Name }}ListParams struct {
+	Page Opt[int]
+	ItemsPerPage Opt[int]
+	{{- range .Edges }}
+		{{- if .Inverse }}
+		Filter{{ pascal .Name }}ID Opt[uuid.UUID]
+		{{- else }}
+		Filter{{ pascal .Name }}IDs Opt[[]uuid.UUID]
+		{{- end }}
+	{{- end }}
+	{{- range .Fields }}
+		{{- if  and (needFilter $sch .) (not .Edge) }}
+			Filter{{ pascal .Name }} Opt[{{ fieldType . }}]
+		{{- end }}
+	{{- end }}
+	With *{{ pascal $e.Name }}QueryEdges
+}
+
+func New{{ .Name }}List(es []*gen.{{ .Name }}) []{{ .Name }} {
+	if len(es) == 0 {
+		return nil
+	}
+	r := make([]{{ .Name }}, len(es))
+	for i, e := range es {
+		r[i] = New{{ .Name }}(e)
+	}
+	return r
+}
+type {{ .Name }}ReadParams struct {
+	ID uuid.UUID
+	With *{{ pascal $e.Name }}QueryEdges
+}
+{{- end }}

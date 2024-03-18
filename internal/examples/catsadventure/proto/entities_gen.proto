@@ -1,0 +1,265 @@
+syntax = "proto3";
+package grpc;
+
+option go_package = "internal/examples/catsadventure/api/grpc";
+import "google/protobuf/timestamp.proto";
+
+
+message BreedEdgesRequest {
+    optional CatEdgesRequest WithCats = 1;
+}
+
+message BreedEdgesResponse {
+    repeated Cat Cats = 1;
+}
+
+service BreedService {
+    rpc ReadBreed (ReadBreedRequest) returns (Breed) {}
+    rpc ReadManyBreed (ReadManyBreedRequest) returns (ReadManyBreedResponse) {}
+    rpc CreateBreed (CreateBreedRequest) returns (Breed) {}
+    rpc UpdateBreed (UpdateBreedRequest) returns (Breed) {}
+    rpc DeleteBreed (DeleteBreedRequest) returns (DeleteBreedResponse) {}
+}
+
+message Breed {
+    string Name = 4;
+    
+    string ID = 3;
+    
+    BreedEdgesResponse Edges = 5;
+}
+
+
+message ReadBreedRequest {
+    string ID = 1;
+        optional BreedEdgesRequest With = 2;
+}
+
+
+message ReadManyBreedRequest {
+    optional int64 Page = 1;
+    optional int64 ItemsPerPage = 2;
+    optional BreedEdgesRequest With = 3;
+}
+
+message ReadManyBreedResponse {
+    repeated Breed Items = 1;
+}
+message CreateBreedRequest {
+    string Name = 4;
+}
+message UpdateBreedRequest {
+    optional string Name = 4;
+        string ID = 3;
+}
+message DeleteBreedRequest {
+    string ID = 3;
+}
+
+message DeleteBreedResponse {
+    string Status = 1;
+}
+
+enum CatOtherTypeEnum {
+    CatOtherTypeMerch = 0;
+    CatOtherTypeHotel = 1;
+    CatOtherTypeTournament = 2;
+}
+enum CatTypeEnum {
+    CatTypeMerch = 0;
+    CatTypeHotel = 1;
+    CatTypeTournament = 2;
+}
+
+message CatEdgesRequest {
+    optional KittenEdgesRequest WithKittens = 1;
+    optional BreedEdgesRequest WithBreed = 2;
+}
+
+message CatEdgesResponse {
+    repeated Kitten Kittens = 1;
+    optional Breed Breed = 2;
+}
+
+service CatService {
+    rpc ReadCat (ReadCatRequest) returns (Cat) {}
+    rpc ReadManyCat (ReadManyCatRequest) returns (ReadManyCatResponse) {}
+    rpc CreateCat (CreateCatRequest) returns (Cat) {}
+    rpc UpdateCat (UpdateCatRequest) returns (Cat) {}
+    rpc DeleteCat (DeleteCatRequest) returns (DeleteCatResponse) {}
+}
+
+message Cat {
+    string Name = 4;
+    
+    string BreedID = 9;
+    
+    int64 Speed = 10;
+    
+    google.protobuf.Timestamp DateFrom = 11;
+    
+    CatOtherTypeEnum OtherType = 5;
+    
+    CatTypeEnum Type = 7;
+    
+    string ID = 2;
+    
+    optional string PhantomField = 3;
+    
+    CatEdgesResponse Edges = 12;
+}
+
+
+message ReadCatRequest {
+    string ID = 1;
+        optional CatEdgesRequest With = 2;
+}
+
+
+message ReadManyCatRequest {
+    optional int64 Page = 1;
+    optional int64 ItemsPerPage = 2;
+    optional CatEdgesRequest With = 3;
+}
+
+message ReadManyCatResponse {
+    repeated Cat Items = 1;
+}
+message CreateCatRequest {
+    string Name = 4;
+    string BreedID = 9;
+    int64 Speed = 10;
+    google.protobuf.Timestamp DateFrom = 11;
+    CatOtherTypeEnum OtherType = 5;
+    CatTypeEnum Type = 7;
+    optional string PhantomField = 3;
+}
+message UpdateCatRequest {
+    optional string Name = 4;
+    optional string BreedID = 9;
+    optional int64 Speed = 10;
+    optional google.protobuf.Timestamp DateFrom = 11;
+    optional string OtherType = 5;
+    optional string Type = 7;
+        string ID = 2;
+    optional string PhantomField = 3;
+}
+message DeleteCatRequest {
+    string ID = 2;
+}
+
+message DeleteCatResponse {
+    string Status = 1;
+}
+
+
+message FatherCatEdgesRequest {
+}
+
+message FatherCatEdgesResponse {
+}
+
+service FatherCatService {
+    rpc ReadFatherCat (ReadFatherCatRequest) returns (FatherCat) {}
+    rpc ReadManyFatherCat (ReadManyFatherCatRequest) returns (ReadManyFatherCatResponse) {}
+    rpc CreateFatherCat (CreateFatherCatRequest) returns (FatherCat) {}
+    rpc UpdateFatherCat (UpdateFatherCatRequest) returns (FatherCat) {}
+    rpc DeleteFatherCat (DeleteFatherCatRequest) returns (DeleteFatherCatResponse) {}
+}
+
+message FatherCat {
+    string Name = 5;
+    
+    string ID = 4;
+    
+    FatherCatEdgesResponse Edges = 6;
+}
+
+
+message ReadFatherCatRequest {
+    string ID = 1;
+}
+
+
+message ReadManyFatherCatRequest {
+    optional int64 Page = 1;
+    optional int64 ItemsPerPage = 2;
+}
+
+message ReadManyFatherCatResponse {
+    repeated FatherCat Items = 1;
+}
+message CreateFatherCatRequest {
+    string Name = 5;
+}
+message UpdateFatherCatRequest {
+    optional string Name = 5;
+        string ID = 4;
+}
+message DeleteFatherCatRequest {
+    string ID = 4;
+}
+
+message DeleteFatherCatResponse {
+    string Status = 1;
+}
+
+
+message KittenEdgesRequest {
+    optional CatEdgesRequest WithMother = 1;
+}
+
+message KittenEdgesResponse {
+    optional Cat Mother = 1;
+}
+
+service KittenService {
+    rpc ReadKitten (ReadKittenRequest) returns (Kitten) {}
+    rpc ReadManyKitten (ReadManyKittenRequest) returns (ReadManyKittenResponse) {}
+    rpc CreateKitten (CreateKittenRequest) returns (Kitten) {}
+    rpc UpdateKitten (UpdateKittenRequest) returns (Kitten) {}
+    rpc DeleteKitten (DeleteKittenRequest) returns (DeleteKittenResponse) {}
+}
+
+message Kitten {
+    string Name = 4;
+    
+    string MotherID = 5;
+    
+    string ID = 3;
+    
+    KittenEdgesResponse Edges = 6;
+}
+
+
+message ReadKittenRequest {
+    string ID = 1;
+        optional KittenEdgesRequest With = 2;
+}
+
+
+message ReadManyKittenRequest {
+    optional int64 Page = 1;
+    optional int64 ItemsPerPage = 2;
+    optional KittenEdgesRequest With = 3;
+}
+
+message ReadManyKittenResponse {
+    repeated Kitten Items = 1;
+}
+message CreateKittenRequest {
+    string Name = 4;
+    string MotherID = 5;
+}
+message UpdateKittenRequest {
+    optional string Name = 4;
+    optional string MotherID = 5;
+        string ID = 3;
+}
+message DeleteKittenRequest {
+    string ID = 3;
+}
+
+message DeleteKittenResponse {
+    string Status = 1;
+}

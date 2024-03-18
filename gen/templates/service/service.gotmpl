@@ -1,0 +1,231 @@
+package service
+
+{{- $root := . }}
+import (
+{{- if gt (len .Entities) 0 }}
+    "context"
+{{- end }}
+"go.uber.org/fx"
+
+{{ $pkg := .Pkg }}
+{{ $entPath := .EntPath }}
+{{- if gt (len .Entities) 0 }}
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+{{- end }}
+{{- range $i, $e := .Entities }}
+    "{{ $pkg }}/{{ $root.RootPkg }}{{ $entPath }}/{{ lower .Name }}"
+    "github.com/google/uuid"
+{{- end }}
+    "go.uber.org/zap"
+)
+
+type Service struct {
+{{- if gt (len .Entities) 0 }}
+    client *gen.Client
+{{- end }}
+logger *zap.Logger
+{{- range .Entities }}
+    {{ .Name }}ListQueryModifier {{ .Name }}QueryModifier
+    {{ .Name }}ReadQueryModifier {{ .Name }}QueryModifier
+{{- end }}
+}
+
+func New({{- if gt (len .Entities) 0 }}client *gen.Client, {{ end }}logger *zap.Logger) *Service {
+return &Service{
+{{- if gt (len .Entities) 0 }}
+    client: client,
+{{- end }}
+logger: logger,
+{{- range .Entities }}
+    {{ .Name }}ListQueryModifier: noOp{{ .Name }}QueryModifier,
+    {{ .Name }}ReadQueryModifier: noOp{{ .Name }}QueryModifier,
+{{- end }}
+}
+}
+
+{{ range $i, $e := .Entities }}
+        func (h *Service) Create{{ .Name }}(ctx context.Context, req Create{{ .Name }}) ({{ .Name }}, error) {
+        b := h.client.{{ .Name }}.Create()
+
+        // Add all fields.
+        {{- range $i, $f := .Fields }}
+            {{- if and (not $f.Immutable) (not $f.AutoUpdate) (not $f.Phantom) (not (techField .)) (not (eq .Name "id")) }}
+            b.Set{{ pascal .Name }}({{ setReqFormat $e . }})
+            {{- end }}
+        {{- end }}
+
+        // Set relations
+        {{- range $i, $f := .Edges }}
+            {{ if .Inverse }}
+                b.Set{{ pascal .Name }}ID(req.{{ pascal .Name }}ID)
+            {{ end }}
+        {{- end }}
+        // Persist to storage.
+        e, err := b.Save(ctx)
+        if err != nil {
+        return {{ .Name }}{}, err
+        }
+
+        {{ if $e.HasCreateEdges }}
+            edges, hasEdges := req.Edges.Get()
+            if hasEdges {
+            {{- template "writeManyEdge" $e }}
+            }
+        {{- end }}
+
+        // Reload the entity to attach all eager-loaded edges.
+        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.ID(e.ID))
+        {{ if $e.HasCreateEdges }}
+            if hasEdges {
+            {{- template "writeManyQueryEdge" $e }}
+            }
+        {{- end }}
+        e, err = q.Only(ctx)
+        if err != nil {
+        // This should never happen.
+        return {{ .Name }}{}, err
+        }
+        response := New{{ .Name }}(e)
+        return response, nil
+        }
+        func (h *Service) Update{{ .Name }}(ctx context.Context, id uuid.UUID, req Update{{ .Name }}) ({{ .Name }}, error) {
+        b := h.client.{{ .Name }}.UpdateOneID(id)
+
+        // Add all fields.
+        {{- range $i, $f := .Fields }}
+            {{- if isIDField $f }}{{continue}}{{end}}
+            {{- if and (not $f.Immutable) (not $f.AutoUpdate) (not $f.Phantom) (not (eq $f.Name "deleted_time")) }}
+                if req.{{ pascal .Name }}.IsSet() {
+                b.Set{{ pascal .Name }}({{ updateReqFormat $e . }})
+                }
+            {{- end }}
+        {{- end }}
+        // Set relations.
+        {{- range $i, $f := .Edges }}
+            {{ if .Inverse }}
+                if req.{{ pascal .Name }}ID.IsSet() {
+                b.Set{{ pascal .Name }}ID(req.{{ pascal .Name }}ID.Get())
+                }
+            {{ end }}
+        {{- end }}
+        // Persist to storage.
+        e, err := b.Save(ctx)
+        if err != nil {
+        return {{ .Name }}{}, err
+        }
+
+        {{ if $e.HasUpdateEdges }}
+            edges, hasEdges := req.Edges.Get()
+            if hasEdges {
+            {{- template "updateManyEdge" $e }}
+            }
+        {{- end }}
+
+        // Reload the entity to attach all eager-loaded edges.
+        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.ID(e.ID))
+        e, err = q.Only(ctx)
+        if err != nil {
+        // This should never happen.
+        return {{ .Name }}{}, err
+        }
+        response := New{{ .Name }}(e)
+        return response, nil
+        }
+        // Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
+        func (h *Service) Delete{{ .Name }}(ctx context.Context, id uuid.UUID) error {
+        err := h.client.{{ .Name }}.DeleteOneID(id).Exec(ctx)
+        if err != nil {
+        switch {
+        case gen.IsNotFound(err):
+        return err
+        case gen.IsConstraintError(err):
+        return err
+        default:
+        // Let the server handle the error.
+        return err
+        }
+        }
+        return nil
+        }
+        func (h *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
+        q := h.client.{{ .Name }}.Query()
+        if err := h.{{ .Name }}ListQueryModifier(ctx, q); err != nil {
+            return {{ .Name }}List{}, err
+        }
+        {{- range $i, $edge := .Edges }}
+            {{- if $edge.Inverse }}
+                if params.Filter{{ pascal $edge.Name }}ID.IsSet() {
+                q.Where({{ lower $e.Name }}.{{ pascal $edge.Name }}IDEQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
+                }
+            {{- else }}
+                if params.Filter{{ pascal $edge.Name }}IDs.IsSet() {
+                q.Where({{ lower $e.Name }}.Has{{ pascal $edge.Name }}With({{ lower $edge.EntityName }}.IDIn(params.Filter{{ pascal $edge.Name }}IDs.Get()...)))
+                }
+            {{- end }}
+        {{- end }}
+        {{- range .Fields }}
+            {{- if not .Edge }}
+                if params.Filter{{ pascal .Name }}.IsSet() {
+                q.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
+                }
+            {{- end }}
+        {{- end }}
+        {{ template "queryEdges" . }}
+        page := 1
+        if params.Page.IsSet() {
+            page = params.Page.Get()
+        }
+        itemsPerPage := 30
+        if params.ItemsPerPage.IsSet() {
+            itemsPerPage = params.ItemsPerPage.Get()
+        }
+        q.Limit(itemsPerPage).Offset((page - 1) * itemsPerPage)
+
+        es, err := q.All(ctx)
+        if err != nil {
+        switch {
+            case gen.IsNotFound(err):
+                return {{ .Name }}List{}, err
+            case gen.IsNotSingular(err):
+                return {{ .Name }}List{}, err
+            default:
+            // Let the server handle the error.
+                return {{ .Name }}List{}, err
+            }
+        }
+        r := New{{ .Name }}List(es)
+        response := {{ .Name }}List{}
+        response.Items = r
+
+        return response, nil
+        }
+    func (h *Service) Read{{ .Name }}(ctx context.Context, params {{ .Name }}ReadParams) ({{ .Name }}, error) {
+        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.IDEQ(params.ID))
+        if err := h.{{ .Name }}ReadQueryModifier(ctx, q); err != nil {
+            return {{ .Name }}{}, err
+        }
+        {{ template "queryEdges" . }}
+        e, err := q.Only(ctx)
+        if err != nil {
+            switch {
+            case gen.IsNotFound(err):
+                return {{ .Name }}{}, err
+            case gen.IsNotSingular(err):
+                return {{ .Name }}{}, err
+            default:
+                // Let the server handle the error.
+                return {{ .Name }}{}, err
+            }
+        }
+
+        return New{{ .Name }}(e), nil
+    }
+
+{{ end }}
+
+var Module = fx.Module(
+    "service",
+    fx.Provide(
+        New,
+    ),
+)

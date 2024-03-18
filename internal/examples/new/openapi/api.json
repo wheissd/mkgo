@@ -1,0 +1,327 @@
+{
+  "components": {
+    "responses": {
+      "400": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "403": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "404": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "409": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "500": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "Error": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      }
+    },
+    "schemas": {
+      "DefaultModel": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "DefaultModelList": {
+        "items": {
+          "$ref": "#/components/schemas/DefaultModel"
+        },
+        "type": "array"
+      },
+      "Error": {
+        "properties": {
+          "code": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Your API title api",
+    "title": "Your API title",
+    "version": "0.0.1"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/defaultmodel": {
+      "get": {
+        "description": "List for DefaultModels",
+        "operationId": "listDefaultModel",
+        "parameters": [
+          {
+            "description": "what page to render",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "item count to render per page",
+            "in": "query",
+            "name": "itemsPerPage",
+            "schema": {
+              "maximum": 255,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultModelList"
+                }
+              }
+            },
+            "description": "result DefaultModel options headers",
+            "headers": {
+              "Content-Range": {
+                "required": true,
+                "schema": {
+                  "description": "Total items count",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List for DefaultModels",
+        "tags": [
+          "DefaultModel"
+        ]
+      }
+    },
+    "/defaultmodel/{id}": {
+      "get": {
+        "description": "Finds the DefaultModel with the requested ID and returns it.",
+        "operationId": "readDefaultModel",
+        "parameters": [
+          {
+            "description": "ID of the DefaultModel",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultModel"
+                }
+              }
+            },
+            "description": "DefaultModelupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Find a DefaultModel by ID",
+        "tags": [
+          "DefaultModel"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:9000"
+    }
+  ]
+}

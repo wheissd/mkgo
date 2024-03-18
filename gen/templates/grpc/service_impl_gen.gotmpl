@@ -1,0 +1,162 @@
+package grpc
+
+import (
+    "context"
+
+    "github.com/google/uuid"
+    {{- if gt (len .Entities) 0 }}
+    "github.com/samber/lo"
+    "{{ .Pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
+    {{- end }}
+)
+
+{{- $root := . }}
+{{ range .Entities }}
+{{ $e := . }}
+type {{ .Name }}ServiceImpl struct {
+    service *service.Service
+    Unimplemented{{ .Name }}ServiceServer
+}
+
+func New{{ .Name }}ServiceImpl(srvc *service.Service) *{{ .Name }}ServiceImpl {
+    return &{{ .Name }}ServiceImpl{
+        service: srvc,
+    }
+}
+
+func parseWith{{ .Name }}(e *{{ .Name }}EdgesRequest) *service.{{ .Name }}QueryEdges {
+	if e == nil {
+		return nil
+	}
+	return &service.{{ .Name }}QueryEdges{
+		{{- range .Edges }}
+			{{- if .WithRead }}
+				{{ pascal .Name }}: parseWith{{ .EntityName }}(e.With{{ pascal .Name }}),
+			{{- end }}
+		{{- end }}
+	}
+}
+
+    {{ if needCreateOp $root . }}
+	func (s *{{ .Name }}ServiceImpl) Create{{ .Name }}(ctx context.Context, req *Create{{ .Name }}Request) (*{{ .Name }}, error) {
+		{{- range .Fields }}
+			{{- if .Edge }}
+				{{ camel .Name }}, err := uuid.Parse(req.{{ pascal .Name }})
+				if err != nil {
+					return nil, err
+				}
+			{{- end }}
+		{{- end }}
+		{{ camel .Name }}, err := s.service.Create{{ .Name }}(
+			ctx,
+			service.Create{{ .Name }} {
+				{{- range .Fields }}
+					{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
+					{{ pascal .Name }}: {{ if isEnum . }}{{ camel $e.Name }}{{ pascal .Name }}ProtoToServiceConverter(int32({{ end }}{{ if .Edge }}{{ camel .Name }}{{ else }}{{ protoToServiceField . }}{{ end }}{{ if isEnum . }})){{ end }},
+					{{- end }}
+				{{- end }}
+			},
+			)
+			if err != nil {
+				return nil, err
+			}
+			res := New{{ .Name }}({{ camel .Name }})
+			return res, nil
+	}
+	{{- end }}
+	{{ if needUpdateOp $root . }}
+	func (s *{{ .Name }}ServiceImpl) Update{{ .Name }}(ctx context.Context, req *Update{{ .Name }}Request) (*{{ .Name }}, error) {
+		id, err := uuid.Parse(req.ID)
+		if err != nil {
+			return nil, err
+		}
+		update := service.Update{{ .Name }}{}
+		{{- range .Fields }}
+			{{- if or .AutoUpdate .Phantom (techField .) (eq .Name "id") }}{{continue}}{{end}}
+			if req.{{ pascal .Name }} != nil {
+				{{- if .Edge }}
+					{{ camel .Name }}, err := uuid.Parse(*req.{{ pascal .Name}})
+					if err != nil {
+						return nil, err
+					}
+				{{- end }}
+				update.{{ pascal .Name }}.Set({{ if .Edge }}{{ camel .Name }}{{ else }}{{ protoToServiceFieldUpdate . }}{{ end }})
+			}
+		{{- end }}
+		serviceRes, err := s.service.Update{{ .Name }}(ctx, id, update)
+		if err != nil {
+			return nil, err
+		}
+		res := New{{ .Name }}(serviceRes)
+		return res, nil
+	}
+	{{- end }}
+	{{ if needDeleteOp $root . }}
+	// Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
+	func (s *{{ .Name }}ServiceImpl) Delete{{ .Name }}(ctx context.Context, params *Delete{{ .Name }}Request) (*Delete{{ .Name }}Response, error) {
+		id, err := uuid.Parse(params.ID)
+		if err != nil {
+			return nil, err
+		}
+		err = s.service.Delete{{ .Name }}(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return &Delete{{ .Name }}Response{Status: "ok"}, nil
+	}
+	{{- end }}
+	{{ if needReadManyOp $root . }}
+	func (s *{{ .Name }}ServiceImpl) ReadMany{{ .Name }}(ctx context.Context, params *ReadMany{{ .Name }}Request) (*ReadMany{{ .Name }}Response, error) {
+		sParams := service.{{ .Name }}ListParams{}
+		if params.Page != nil {
+			sParams.Page.Set(int(*params.Page))
+		}
+		{{- range .Fields }}
+			{{- if needFilter $root . }}
+				if v := params.Filter{{ pascal .Name }}; v != nil {
+				{{- if fieldTypeIs . "uuid.UUID" }}
+					{{ camel .Name }}, err := uuid.Parse(*params.Filter{{ pascal .Name}})
+					if err != nil {
+					return nil, err
+					}
+				{{- end }}
+				sParams.Filter{{ pascal .Name }}.Set({{ if fieldTypeIs . "uuid.UUID" }}{{ camel .Name }}{{ else }}{{ if .Enum }}{{ camel $e.Name }}{{ pascal .Name }}ProtoToServiceConverter(int32({{ end }}{{ protoToServiceFieldFilter . }}{{ if .Enum }})){{ end }}{{ end }})
+				}
+			{{- end }}
+		{{- end }}
+		if params.ItemsPerPage != nil {
+			sParams.ItemsPerPage.Set(int(*params.ItemsPerPage))
+		}
+		{{ if .HasReadEdges }}
+		var (
+			err error
+		)
+		sParams.With = parseWith{{ .Name }}(params.With)
+		{{- end }}
+		list, err := s.service.List{{ .Name }}(ctx, sParams)
+		if err != nil {
+			return nil, err
+		}
+		response := ReadMany{{ .Name }}Response{
+			Items: New{{ .Name }}List(list.Items),
+		}
+		return &response, nil
+	}
+	{{- end }}
+	{{ if needReadOneOp $root . }}
+        func (s *{{ .Name }}ServiceImpl) Read{{ .Name }}(ctx context.Context, r *Read{{ .Name }}Request) (*{{ .Name }}, error) {
+            id, err := uuid.Parse(r.ID)
+            if err != nil {
+                return nil, err
+            }
+            e, err := s.service.Read{{ .Name }}(ctx, service.{{ .Name }}ReadParams{ID: id})
+            if err != nil {
+                return nil, err
+            }
+            response := New{{ .Name }}(e)
+            return response, nil
+        }
+	{{ end }}
+
+{{- end }}
+

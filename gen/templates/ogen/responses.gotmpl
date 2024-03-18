@@ -1,0 +1,47 @@
+package ogen
+
+import (
+{{- if hasOps . }}
+"{{ .Pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
+{{- end }}
+)
+
+{{ $root := . }}
+{{ range $i, $e := .Entities }}
+
+{{ if or (needReadOneOp $root .) (needReadManyOp $root .) (needUpdateOp $root .) (needCreateOp $root .) }}
+  func New{{ .Name }}(e service.{{ .Name }}) {{ .Name }} {
+    var ret {{ .Name }}
+    {{- range $i, $f := .Fields }}
+      {{- if isFieldPublic $root $f }}
+      ret.{{ pascal .Name }}{{ if .Required }} = {{ else }}.SetTo({{ end }}{{ if isEnum . }}{{ $e.Name }}{{ pascal $f.Name }}({{ end }}e.{{ pascal $f.Name }}{{ if isEnum . }}){{ end }}{{ if not .Required }}.Get()){{ end }}
+      {{- end }}
+    {{- end }}
+
+  {{- range .Edges }}
+    if {{ if .ToOne }}e.Edges.{{ pascal .Name }}.IsSet(){{ else }}e.Edges.{{ pascal .Name }} != nil{{ end }} {
+    ret.Edges.{{ pascal .Name }}{{- if .ToOne }}.SetTo(New{{ .EntityName }}(e.Edges.{{ pascal .Name }}.Get())){{ else }} = make([]{{ .EntityName }}, 0, len(e.Edges.{{ pascal .Name }})){{ end }}
+    {{- if not .ToOne }}
+      for i := range e.Edges.{{ pascal .Name}} {
+      ret.Edges.{{ pascal .Name}} = append(ret.Edges.{{ pascal .Name}}, New{{ .EntityName }}(e.Edges.{{ pascal .Name}}[i]))
+      }
+    {{- end }}
+    }
+  {{- end }}
+
+    return ret
+  }
+{{- end }}
+{{- if needReadManyOp $root . }}
+  func New{{ .Name }}List(es []service.{{ .Name }}) []{{ .Name }} {
+    if len(es) == 0 {
+      return nil
+    }
+    r := make([]{{ .Name }}, len(es))
+    for i, e := range es {
+      r[i] = New{{ .Name }}(e)
+    }
+    return r
+  }
+{{- end }}
+{{- end }}

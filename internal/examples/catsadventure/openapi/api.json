@@ -1,0 +1,1889 @@
+{
+  "components": {
+    "responses": {
+      "400": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "403": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "404": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "409": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "500": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      },
+      "Error": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "status",
+                  "message"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "description": "Error response"
+      }
+    },
+    "schemas": {
+      "Breed": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "cats": {
+                "items": {
+                  "$ref": "#/components/schemas/Cat"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "create_time",
+          "update_time",
+          "id",
+          "edges"
+        ],
+        "type": "object"
+      },
+      "BreedList": {
+        "items": {
+          "$ref": "#/components/schemas/Breed"
+        },
+        "type": "array"
+      },
+      "Cat": {
+        "properties": {
+          "PhantomField": {
+            "type": "string"
+          },
+          "breed_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "breed": {
+                "$ref": "#/components/schemas/Breed"
+              },
+              "kittens": {
+                "items": {
+                  "$ref": "#/components/schemas/Kitten"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "other_type": {
+            "type": "string"
+          },
+          "speed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "id",
+          "speed",
+          "date_from",
+          "update_time",
+          "other_type",
+          "create_time",
+          "name",
+          "breed_id",
+          "type",
+          "edges"
+        ],
+        "type": "object"
+      },
+      "CatList": {
+        "items": {
+          "$ref": "#/components/schemas/Cat"
+        },
+        "type": "array"
+      },
+      "CreateBreed": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "cats": {
+                "items": {
+                  "$ref": "#/components/schemas/CreateCat"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "create_time",
+          "update_time",
+          "id"
+        ],
+        "type": "object"
+      },
+      "CreateCat": {
+        "properties": {
+          "PhantomField": {
+            "type": "string"
+          },
+          "breed_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "breed": {
+                "$ref": "#/components/schemas/CreateBreed"
+              },
+              "kittens": {
+                "items": {
+                  "$ref": "#/components/schemas/CreateKitten"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "other_type": {
+            "type": "string"
+          },
+          "speed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "speed",
+          "date_from",
+          "update_time",
+          "other_type",
+          "create_time",
+          "name",
+          "breed_id",
+          "type"
+        ],
+        "type": "object"
+      },
+      "CreateFatherCat": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "create_time",
+          "update_time",
+          "id"
+        ],
+        "type": "object"
+      },
+      "CreateKitten": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "mother": {
+                "$ref": "#/components/schemas/CreateCat"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mother_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "create_time",
+          "update_time",
+          "id",
+          "name",
+          "mother_id"
+        ],
+        "type": "object"
+      },
+      "Error": {
+        "properties": {
+          "code": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FatherCat": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "create_time",
+          "update_time",
+          "id"
+        ],
+        "type": "object"
+      },
+      "FatherCatList": {
+        "items": {
+          "$ref": "#/components/schemas/FatherCat"
+        },
+        "type": "array"
+      },
+      "Kitten": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges": {
+            "properties": {
+              "mother": {
+                "$ref": "#/components/schemas/Cat"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mother_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "create_time",
+          "update_time",
+          "id",
+          "name",
+          "mother_id",
+          "edges"
+        ],
+        "type": "object"
+      },
+      "KittenList": {
+        "items": {
+          "$ref": "#/components/schemas/Kitten"
+        },
+        "type": "array"
+      },
+      "UpdateBreed": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges_delete": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateCat": {
+        "properties": {
+          "PhantomField": {
+            "type": "string"
+          },
+          "breed_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "edges_delete": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "other_type": {
+            "type": "string"
+          },
+          "speed": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateFatherCat": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateKitten": {
+        "properties": {
+          "create_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deleted_time": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mother_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "update_time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Your API title api",
+    "title": "Your API title",
+    "version": "0.0.1"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/breed": {
+      "get": {
+        "description": "List for Breeds",
+        "operationId": "listBreed",
+        "parameters": [
+          {
+            "description": "what page to render",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "item count to render per page",
+            "in": "query",
+            "name": "itemsPerPage",
+            "schema": {
+              "maximum": 255,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filter by Cat relation id",
+            "in": "query",
+            "name": "filterCatsId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: cats; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreedList"
+                }
+              }
+            },
+            "description": "result Breed options headers",
+            "headers": {
+              "Content-Range": {
+                "required": true,
+                "schema": {
+                  "description": "Total items count",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List for Breeds",
+        "tags": [
+          "Breed"
+        ]
+      },
+      "post": {
+        "description": "Create a new Breed  and persists it to storage.",
+        "operationId": "createBreed",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBreed"
+              }
+            }
+          },
+          "description": "Breed to create",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Breed"
+                }
+              }
+            },
+            "description": "Breedcreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Create a new Breed",
+        "tags": [
+          "Breed"
+        ]
+      }
+    },
+    "/breed/{id}": {
+      "delete": {
+        "description": "Delete Breed.",
+        "operationId": "deleteBreed",
+        "parameters": [
+          {
+            "description": "ID of the Breed",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Breedupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete Breed",
+        "tags": [
+          "Breed"
+        ]
+      },
+      "get": {
+        "description": "Finds the Breed with the requested ID and returns it.",
+        "operationId": "readBreed",
+        "parameters": [
+          {
+            "description": "ID of the Breed",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: cats; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Breed"
+                }
+              }
+            },
+            "description": "Breedupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Find a Breed by ID",
+        "tags": [
+          "Breed"
+        ]
+      },
+      "put": {
+        "description": "Update Breed  and persists it to storage.",
+        "operationId": "updateBreed",
+        "parameters": [
+          {
+            "description": "ID of the Breed",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBreed"
+              }
+            }
+          },
+          "description": "Breed to update",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Breed"
+                }
+              }
+            },
+            "description": "Breedupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update Breed",
+        "tags": [
+          "Breed"
+        ]
+      }
+    },
+    "/cat": {
+      "get": {
+        "description": "List for Cats",
+        "operationId": "listCat",
+        "parameters": [
+          {
+            "description": "what page to render",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "item count to render per page",
+            "in": "query",
+            "name": "itemsPerPage",
+            "schema": {
+              "maximum": 255,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filter by Kitten relation id",
+            "in": "query",
+            "name": "filterKittensId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by Breed relation id",
+            "in": "query",
+            "name": "filterBreedId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: kittens, breed; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatList"
+                }
+              }
+            },
+            "description": "result Cat options headers",
+            "headers": {
+              "Content-Range": {
+                "required": true,
+                "schema": {
+                  "description": "Total items count",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List for Cats",
+        "tags": [
+          "Cat"
+        ]
+      },
+      "post": {
+        "description": "Create a new Cat  and persists it to storage.",
+        "operationId": "createCat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCat"
+              }
+            }
+          },
+          "description": "Cat to create",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cat"
+                }
+              }
+            },
+            "description": "Catcreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Create a new Cat",
+        "tags": [
+          "Cat"
+        ]
+      }
+    },
+    "/cat/{id}": {
+      "delete": {
+        "description": "Delete Cat.",
+        "operationId": "deleteCat",
+        "parameters": [
+          {
+            "description": "ID of the Cat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Catupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete Cat",
+        "tags": [
+          "Cat"
+        ]
+      },
+      "get": {
+        "description": "Finds the Cat with the requested ID and returns it.",
+        "operationId": "readCat",
+        "parameters": [
+          {
+            "description": "ID of the Cat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: kittens, breed; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cat"
+                }
+              }
+            },
+            "description": "Catupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Find a Cat by ID",
+        "tags": [
+          "Cat"
+        ]
+      },
+      "put": {
+        "description": "Update Cat  and persists it to storage.",
+        "operationId": "updateCat",
+        "parameters": [
+          {
+            "description": "ID of the Cat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCat"
+              }
+            }
+          },
+          "description": "Cat to update",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cat"
+                }
+              }
+            },
+            "description": "Catupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update Cat",
+        "tags": [
+          "Cat"
+        ]
+      }
+    },
+    "/fathercat": {
+      "get": {
+        "description": "List for FatherCats",
+        "operationId": "listFatherCat",
+        "parameters": [
+          {
+            "description": "what page to render",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "item count to render per page",
+            "in": "query",
+            "name": "itemsPerPage",
+            "schema": {
+              "maximum": 255,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FatherCatList"
+                }
+              }
+            },
+            "description": "result FatherCat options headers",
+            "headers": {
+              "Content-Range": {
+                "required": true,
+                "schema": {
+                  "description": "Total items count",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List for FatherCats",
+        "tags": [
+          "FatherCat"
+        ]
+      },
+      "post": {
+        "description": "Create a new FatherCat  and persists it to storage.",
+        "operationId": "createFatherCat",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFatherCat"
+              }
+            }
+          },
+          "description": "FatherCat to create",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FatherCat"
+                }
+              }
+            },
+            "description": "FatherCatcreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Create a new FatherCat",
+        "tags": [
+          "FatherCat"
+        ]
+      }
+    },
+    "/fathercat/{id}": {
+      "delete": {
+        "description": "Delete FatherCat.",
+        "operationId": "deleteFatherCat",
+        "parameters": [
+          {
+            "description": "ID of the FatherCat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FatherCatupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete FatherCat",
+        "tags": [
+          "FatherCat"
+        ]
+      },
+      "get": {
+        "description": "Finds the FatherCat with the requested ID and returns it.",
+        "operationId": "readFatherCat",
+        "parameters": [
+          {
+            "description": "ID of the FatherCat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FatherCat"
+                }
+              }
+            },
+            "description": "FatherCatupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Find a FatherCat by ID",
+        "tags": [
+          "FatherCat"
+        ]
+      },
+      "put": {
+        "description": "Update FatherCat  and persists it to storage.",
+        "operationId": "updateFatherCat",
+        "parameters": [
+          {
+            "description": "ID of the FatherCat",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFatherCat"
+              }
+            }
+          },
+          "description": "FatherCat to update",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FatherCat"
+                }
+              }
+            },
+            "description": "FatherCatupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update FatherCat",
+        "tags": [
+          "FatherCat"
+        ]
+      }
+    },
+    "/kitten": {
+      "get": {
+        "description": "List for Kittens",
+        "operationId": "listKitten",
+        "parameters": [
+          {
+            "description": "what page to render",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "item count to render per page",
+            "in": "query",
+            "name": "itemsPerPage",
+            "schema": {
+              "maximum": 255,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Filter by Cat relation id",
+            "in": "query",
+            "name": "filterMotherId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: mother; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KittenList"
+                }
+              }
+            },
+            "description": "result Kitten options headers",
+            "headers": {
+              "Content-Range": {
+                "required": true,
+                "schema": {
+                  "description": "Total items count",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List for Kittens",
+        "tags": [
+          "Kitten"
+        ]
+      },
+      "post": {
+        "description": "Create a new Kitten  and persists it to storage.",
+        "operationId": "createKitten",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKitten"
+              }
+            }
+          },
+          "description": "Kitten to create",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kitten"
+                }
+              }
+            },
+            "description": "Kittencreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Create a new Kitten",
+        "tags": [
+          "Kitten"
+        ]
+      }
+    },
+    "/kitten/{id}": {
+      "delete": {
+        "description": "Delete Kitten.",
+        "operationId": "deleteKitten",
+        "parameters": [
+          {
+            "description": "ID of the Kitten",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Kittenupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete Kitten",
+        "tags": [
+          "Kitten"
+        ]
+      },
+      "get": {
+        "description": "Finds the Kitten with the requested ID and returns it.",
+        "operationId": "readKitten",
+        "parameters": [
+          {
+            "description": "ID of the Kitten",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "return result with edges. accesible first level edges: mother; nested edges format: entity.edge,entity.edge.second_level_edge",
+            "in": "query",
+            "name": "with",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kitten"
+                }
+              }
+            },
+            "description": "Kittenupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Find a Kitten by ID",
+        "tags": [
+          "Kitten"
+        ]
+      },
+      "put": {
+        "description": "Update Kitten  and persists it to storage.",
+        "operationId": "updateKitten",
+        "parameters": [
+          {
+            "description": "ID of the Kitten",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKitten"
+              }
+            }
+          },
+          "description": "Kitten to update",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kitten"
+                }
+              }
+            },
+            "description": "Kittenupdated"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update Kitten",
+        "tags": [
+          "Kitten"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:9000"
+    }
+  ]
+}

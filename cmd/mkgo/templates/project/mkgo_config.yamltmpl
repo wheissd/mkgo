@@ -1,0 +1,35 @@
+apis:
+    - grpc:
+        OutputPath: {{ if not .InternalMode }}internal/{{ end }}api
+        ProtoPath: proto
+        Mode: grpc_admin
+        Transport: grpc
+        Title: Your API title
+        # enable create by default,
+        # you can enable/disable explicitly for each model in genOpenapi annotations
+        EnableDefaultCreate: true
+        # enable update by default,
+        # you can enable/disable explicitly for each model in genOpenapi annotations
+        EnableDefaultUpdate: true
+        # enable delete by default,
+        # you can enable/disable explicitly for each model in genOpenapi annotations
+        EnableDefaultDelete: true
+        # enable readOne by default
+        # you can enable/disable explicitly for each model in genOpenapi annotations
+        EnableDefaultReadOne: true
+        # enable readMany by default
+        # you can enable/disable explicitly for each model in genOpenapi annotations
+        EnableDefaultReadMany: true
+        # make fields public by default, set field annotations to hide
+        FieldsPublicByDefault: true
+        # enable edges read by default, set edge annotations to hide
+        EnableEdgeReadByDefault: true
+        # enable edges write by default, set edge annotations to hide
+        EnableEdgeWriteByDefault: true
+    - rest-client:
+        OutputPath: {{ if not .InternalMode }}internal/{{ end }}api
+        OpenApiPath: openapi/api.json
+        Mode: rest_client
+        Title: Your API title
+        Servers:
+          - http://localhost:9000

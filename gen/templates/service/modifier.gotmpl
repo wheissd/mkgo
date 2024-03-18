@@ -1,0 +1,14 @@
+package service
+
+import (
+{{- if gt (len .Entities) 0 }}
+"{{ .Pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+"context"
+{{- end }}
+)
+
+{{ range .Entities }}
+type {{ .Name }}QueryModifier func(ctx context.Context, q *gen.{{ .Name }}Query) error
+
+func noOp{{ .Name }}QueryModifier(ctx context.Context, q *gen.{{ .Name }}Query) error { return nil }
+{{- end }}

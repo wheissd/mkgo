@@ -1,0 +1,76 @@
+package grpc
+
+import (
+{{- if hasOps . }}
+"{{ .Pkg }}/{{ .RootPkg }}api/service"
+{{- end }}
+)
+
+{{ $root := . }}
+{{ range $i, $e := .Entities }}
+{{- range $j, $f := .Fields }}
+  {{- if isEnum .}}
+    func {{ camel $e.Name }}{{ pascal $f.Name }}ProtoToServiceConverter(v int32) string {
+      switch v {
+        {{- range $index, $value := .Enum }}
+        case {{ $index }}:
+          return "{{ $value }}"
+        {{- end }}
+      }
+      return ""
+    }
+
+    func {{ camel $e.Name }}{{ pascal $f.Name }}ServiceToProtoConverter(v string) {{ pascal $e.Name }}{{ pascal $f.Name }}Enum {
+    switch v {
+    {{- range $index, $value := .Enum }}
+      case "{{ $value }}":
+      return {{ pascal $e.Name }}{{ pascal $f.Name }}Enum({{ $index }})
+    {{- end }}
+    }
+    return {{ pascal $e.Name }}{{ pascal $f.Name }}Enum(0)
+    }
+
+  {{- end }}
+{{- end }}
+{{ if or (needReadOneOp $root .) (needReadManyOp $root .) (needUpdateOp $root .) (needCreateOp $root .) }}
+  func New{{ .Name }}(e service.{{ .Name }}) *{{ .Name }} {
+    ret := {{ .Name }}{
+      Edges: &{{ .Name }}EdgesResponse{},
+    }
+    {{- range $i, $f := .Fields }}
+      {{- if techField . }}
+        {{- continue }}
+      {{- end }}
+      {{- if isFieldPublic $root $f }}
+      ret.{{ pascal .Name }} = {{ if isEnum . }}{{ camel $e.Name }}{{ pascal $f.Name }}ServiceToProtoConverter({{ end }}{{ serviceToProtoField $f }}{{ if isEnum . }}){{ end }}
+      {{- end }}
+    {{- end }}
+
+  {{- range .Edges }}
+    if {{ if .ToOne }}e.Edges.{{ pascal .Name }}.IsSet(){{ else }}e.Edges.{{ pascal .Name }} != nil{{ end }} {
+    ret.Edges.{{ pascal .Name }}{{- if .ToOne }} = New{{ .EntityName }}(e.Edges.{{ pascal .Name }}.Get()){{ else }} = make([]*{{ .EntityName }}, 0, len(e.Edges.{{ pascal .Name }})){{ end }}
+    {{- if not .ToOne }}
+      for i := range e.Edges.{{ pascal .Name}} {
+      ret.Edges.{{ pascal .Name}} = append(ret.Edges.{{ pascal .Name}}, New{{ .EntityName }}(e.Edges.{{ pascal .Name}}[i]))
+      }
+    {{- end }}
+    }
+  {{- end }}
+
+    return &ret
+  }
+{{- end }}
+{{- if needReadManyOp $root . }}
+  func New{{ .Name }}List(es []service.{{ .Name }}) []*{{ .Name }} {
+    if len(es) == 0 {
+      return nil
+    }
+    r := make([]*{{ .Name }}, len(es))
+    for i, e := range es {
+      item := New{{ .Name }}(e)
+      r[i] = item
+    }
+    return r
+  }
+{{- end }}
+{{- end }}

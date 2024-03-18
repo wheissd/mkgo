@@ -1,0 +1,164 @@
+package ogen
+
+import (
+    "context"
+    "net/http"
+{{- if gt (len .Entities) 0 }}
+	"strings"
+{{- end }}
+
+		{{ $pkg := .Pkg }}
+		{{ $entPath := .EntPath }}
+{{- if gt (len .Entities) 0 }}
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+	"{{ $pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
+{{- end }}
+    "go.uber.org/zap"
+)
+{{- $sch := . }}
+
+type HandlerImpl struct {
+{{- if gt (len .Entities) 0 }}
+	client *gen.Client
+	service *service.Service
+{{- end }}
+	logger *zap.Logger
+}
+
+func NewHandler(
+{{- if gt (len .Entities) 0 }}
+	client *gen.Client,
+	srvc *service.Service,
+{{- end }}logger *zap.Logger,
+) *HandlerImpl {
+	return &HandlerImpl{
+{{- if gt (len .Entities) 0 }}
+		client: client,
+		service: srvc,
+{{- end }}
+		logger: logger,
+	}
+}
+
+func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode {
+  	h.logger.Error("Handler error", zap.Error(err))
+	var errStatusCode *ErrorStatusCode
+	if errors.As(err, &errStatusCode) {
+		return errStatusCode
+	}
+	return &ErrorStatusCode{
+		StatusCode: http.StatusInternalServerError,
+		Response: []ErrorItem{
+			{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			},
+		},
+	}
+}
+
+{{- $root := . }}
+{{ range $i, $e := .Entities }}
+	{{ if needCreateOp $root . }}
+	func (h *HandlerImpl) Create{{ .Name }}(ctx context.Context, req *Create{{ .Name }}) (Create{{ .Name }}Res, error) {
+		{{ camel .Name }}, err := h.service.Create{{ .Name }}(
+			ctx,
+			service.Create{{ .Name }} {
+				{{- range .Fields }}
+					{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
+					{{ pascal .Name }}: {{ if isEnum . }}string({{ end }}req.{{ pascal .Name }}{{ if isEnum . }}){{ end }},
+					{{- end }}
+				{{- end }}
+			},
+			)
+			if err != nil {
+				return nil, err
+			}
+			res := New{{ .Name }}({{ camel .Name }})
+			return &res, nil
+	}
+	{{- end }}
+	{{ if needUpdateOp $root . }}
+	func (h *HandlerImpl) Update{{ .Name }}(ctx context.Context, req *Update{{ .Name }}, params Update{{ .Name }}Params) (Update{{ .Name }}Res, error) {
+		update := service.Update{{ .Name }}{}
+		{{- range .Fields }}
+			{{- if or .AutoUpdate .Phantom (techField .) (eq .Name "id") }}{{continue}}{{end}}
+			if req.{{ pascal .Name }}.IsSet() {
+				update.{{ pascal .Name }}.Set({{ if isEnum . }}string({{ end }}req.{{ pascal .Name }}.Value{{ if isEnum . }}){{ end }})
+			}
+		{{- end }}
+		serviceRes, err := h.service.Update{{ .Name }}(ctx, params.ID, update)
+		if err != nil {
+			return nil, err
+		}
+		res := New{{ .Name }}(serviceRes)
+		return &res, nil
+	}
+	{{- end }}
+	{{ if needDeleteOp $root . }}
+	// Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
+	func (h *HandlerImpl) Delete{{ .Name }}(ctx context.Context, params Delete{{ .Name }}Params) (Delete{{ .Name }}Res, error) {
+		err := h.service.Delete{{ .Name }}(ctx, params.ID)
+		if err != nil {
+			return nil, err
+		}
+		return new(Delete{{ .Name }}OK), nil
+	}
+	{{- end }}
+	{{ if needReadManyOp $root . }}
+	func (h *HandlerImpl) List{{ .Name }}(ctx context.Context, params List{{ .Name }}Params) (List{{ .Name }}Res, error) {
+		sParams := service.{{ .Name }}ListParams{}
+		if params.Page.IsSet() {
+			sParams.Page.Set(params.Page.Value)
+		}
+		if params.ItemsPerPage.IsSet() {
+			sParams.ItemsPerPage.Set(params.ItemsPerPage.Value)
+		}
+		{{- range .Fields }}
+			{{- if needFilter $sch . }}
+				if v, ok := params.Filter{{ pascal .Name }}.Get(); ok {
+					sParams.Filter{{ pascal .Name }}.Set(v)
+				}
+			{{- end }}
+		{{- end }}
+		{{ if .HasReadEdges }}
+		var (
+			err error
+		)
+		if params.With.IsSet() {
+			topLevelEdges := strings.Split(params.With.Value, ",")
+			for i := range topLevelEdges {
+				switch topLevelEdges[i] {
+				{{- range .Edges }}
+					case "{{ .Name }}":
+					sParams.With.{{ pascal .Name }}, err = parseWith{{ .EntityName }}(0, topLevelEdges[i], nil)
+					if err != nil {
+						return nil, err
+					}
+				{{- end }}
+				}
+			}
+		}
+		{{- end }}
+		list, err := h.service.List{{ .Name }}(ctx, sParams)
+		if err != nil {
+			return nil, err
+		}
+		response := {{ .Name }}ListHeaders{
+			Response: New{{ .Name }}List(list.Items),
+		}
+		return &response, nil
+	}
+	{{- end }}
+	{{ if needReadOneOp $root . }}
+	func (h *HandlerImpl) Read{{ .Name }}(ctx context.Context, params Read{{ .Name }}Params) (Read{{ .Name }}Res, error) {
+			e, err := h.service.Read{{ .Name }}(ctx, service.{{ .Name }}ReadParams{ID: params.ID})
+			if err != nil {
+				return nil, err
+			}
+			res := New{{ .Name }}(e)
+			return &res, nil
+	}
+	{{ end }}
+
+{{ end }}
