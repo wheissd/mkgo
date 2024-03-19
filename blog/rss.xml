@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Mkgo Blog</title>
+        <link>https://mkgo.dev/blog</link>
+        <description>Mkgo Blog</description>
+        <lastBuildDate>Tue, 28 May 2019 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[first-blog-post]]></title>
+            <link>https://mkgo.dev/blog/2019/05/28/first-blog-post</link>
+            <guid>https://mkgo.dev/blog/2019/05/28/first-blog-post</guid>
+            <pubDate>Tue, 28 May 2019 00:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
