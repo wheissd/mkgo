@@ -11,10 +11,10 @@ permissions:
   contents: write
 
 jobs:
-  defaults:
-    run:
-      working-directory: ./website
   deploy:
+    defaults:
+      run:
+        working-directory: ./website
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     steps:
