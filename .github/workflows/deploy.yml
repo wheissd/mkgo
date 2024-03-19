@@ -12,9 +12,6 @@ permissions:
 
 jobs:
   deploy:
-    defaults:
-      run:
-        working-directory: ./website
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     steps:
@@ -28,13 +25,17 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+        working-directory: website
+
       - name: Build website
         run: yarn build
+        working-directory: website
 
       # Popular action to deploy to GitHub Pages:
       # Docs: https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-docusaurus
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
+        working-directory: website
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Build output to publish to the `gh-pages` branch:
