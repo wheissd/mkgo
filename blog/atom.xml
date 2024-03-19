@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://mkgo.dev/blog</id>
+    <id>https://mkgo.dev/mkgo/blog</id>
     <title>Mkgo Blog</title>
     <updated>2019-05-28T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://mkgo.dev/blog"/>
+    <link rel="alternate" href="https://mkgo.dev/mkgo/blog"/>
     <subtitle>Mkgo Blog</subtitle>
     <entry>
         <title type="html"><![CDATA[first-blog-post]]></title>
-        <id>https://mkgo.dev/blog/2019/05/28/first-blog-post</id>
-        <link href="https://mkgo.dev/blog/2019/05/28/first-blog-post"/>
+        <id>https://mkgo.dev/mkgo/blog/2019/05/28/first-blog-post</id>
+        <link href="https://mkgo.dev/mkgo/blog/2019/05/28/first-blog-post"/>
         <updated>2019-05-28T00:00:00.000Z</updated>
     </entry>
 </feed>
