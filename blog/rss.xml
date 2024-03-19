@@ -2,7 +2,7 @@
 <rss version="2.0">
     <channel>
         <title>Mkgo Blog</title>
-        <link>https://mkgo.dev/mkgo/blog</link>
+        <link>https://mkgo.dev/blog</link>
         <description>Mkgo Blog</description>
         <lastBuildDate>Tue, 28 May 2019 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
@@ -10,8 +10,8 @@
         <language>en</language>
         <item>
             <title><![CDATA[first-blog-post]]></title>
-            <link>https://mkgo.dev/mkgo/blog/2019/05/28/first-blog-post</link>
-            <guid>https://mkgo.dev/mkgo/blog/2019/05/28/first-blog-post</guid>
+            <link>https://mkgo.dev/blog/2019/05/28/first-blog-post</link>
+            <guid>https://mkgo.dev/blog/2019/05/28/first-blog-post</guid>
             <pubDate>Tue, 28 May 2019 00:00:00 GMT</pubDate>
         </item>
     </channel>
