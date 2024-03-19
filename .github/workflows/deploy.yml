@@ -1,9 +1,5 @@
 name: Deploy to GitHub Pages
 
-defaults:
-  run:
-    working-directory: ./website
-
 on:
   push:
     branches:
@@ -15,6 +11,9 @@ permissions:
   contents: write
 
 jobs:
+  defaults:
+    run:
+      working-directory: ./website
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
