@@ -50,7 +50,13 @@ logger: logger,
         // Add all fields.
         {{- range $i, $f := .Fields }}
             {{- if and (not $f.Immutable) (not $f.AutoUpdate) (not $f.Phantom) (not (techField .)) (not (eq .Name "id")) }}
-            b.Set{{ pascal .Name }}({{ setReqFormat $e . }})
+            {{- if not $f.Required }}
+                if {{ setReqFormat $e . }}.IsSet() {
+            {{- end }}
+            b.Set{{ pascal .Name }}({{ setReqFormat $e . }}{{- if not $f.Required }}.Get(){{ end }})
+            {{- if not $f.Required }}
+                }
+            {{- end }}
             {{- end }}
         {{- end }}
 
@@ -164,7 +170,7 @@ logger: logger,
             {{- end }}
         {{- end }}
         {{- range .Fields }}
-            {{- if not .Edge }}
+            {{- if  and (needFilter $root .) (not .Edge) }}
                 if params.Filter{{ pascal .Name }}.IsSet() {
                 q.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
                 }

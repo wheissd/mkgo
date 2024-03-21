@@ -79,9 +79,10 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 
 		// gen pre
 		for _, cfgItem := range cfg.APIs {
-			preOutput := "./" + rootDir + cfgItem.OutputPath + "/cmd/apigen"
+			preOutput := "./" + rootDir + apigenDelim + cfgItem.OutputPath + "/cmd/apigen"
 			schemaPath := rootDir + "/ent/schema"
 			genPath := rootDir + "/ent/gen"
+			cmd.logGreen("run cmd.pre")
 			cmd.logger.Debug(
 				"run cmd.pre",
 				zap.String("preOutput", preOutput),
@@ -89,7 +90,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 				zap.String("schemaPath", schemaPath),
 				zap.String("genPath", genPath),
 			)
-			cmd.pre(preOutput, schemaPath, genPath)
+			err = cmd.pre(preOutput, schemaPath, genPath)
 			if err != nil {
 				return err
 			}
