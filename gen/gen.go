@@ -47,6 +47,7 @@ var fns = template.FuncMap{
 	"isFieldPublic":             isFieldPublic,
 	"isIDField":                 isIDField,
 	"fieldType":                 fieldType,
+	"fieldDefault":              fieldDefault,
 	"fieldTypeIs":               fieldTypeIs,
 	"updateFieldType":           updateFieldType,
 	"sprintf":                   fmt.Sprintf,

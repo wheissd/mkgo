@@ -15,6 +15,7 @@ const (
 
 type Edge struct {
 	Name       string
+	FieldName  string
 	EntityName string
 	Order      int
 	Entity     *Entity

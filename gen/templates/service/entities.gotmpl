@@ -1,5 +1,13 @@
 package service
 
+{{- define "fieldVal" }}
+	{{- if eq .Type.Type.Name "enum" }}string({{ end }}{{ if .Type.IsPointer }}NewOptP({{ end }}e.{{ pascal .Name }}{{ if .Type.IsPointer }}){{ end }}{{ if eq .Type.Type.Name "enum" }}){{ end }}
+{{- end }}
+
+{{- define "newField" }}
+	{{- if and (not .Required) (not .Type.IsPointer) }}Opt[{{ fieldType . }}]{isSet:{{ template "fieldVal" . }} != {{ fieldDefault . }},val: {{ template "fieldVal" . }}}{{ else }}{{ template "fieldVal" . }}{{ end }}
+{{- end }}
+
 {{- $pkg := .Pkg }}
 {{- $entPath := .EntPath }}
 import (
@@ -58,8 +66,8 @@ type {{ .Name }}Edges struct {
 func New{{ .Name }}(e *gen.{{ .Name }}) {{ .Name }} {
 	res := {{ .Name }} {
 	{{- range .Fields }}
-		{{- if .Phantom }}{{ continue }}{{end}}
-		{{ pascal .Name }}: {{ if eq .Type.Type.Name "enum" }}string({{ end }}{{ if .Type.IsPointer }}NewOptP({{ end }}e.{{ pascal .Name }}{{ if .Type.IsPointer }}){{ end }}{{ if eq .Type.Type.Name "enum" }}){{ end }},
+		{{- if or .Phantom }}{{ continue }}{{end}}
+		{{ pascal .Name }}: {{ template "newField" .}},
 	{{- end }}
 	}
 	{{- range .Edges }}

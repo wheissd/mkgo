@@ -51,6 +51,7 @@ func Parse(entities []lib.PreEntity, schema *entity.Schema, mode string) {
 			toOne := et == entity.EdgeM2O || et == entity.EdgeO2O
 			edg := &entity.Edge{
 				Name:       edge.Descriptor().Name,
+				FieldName:  edge.Descriptor().Field,
 				EntityName: edge.Descriptor().Type,
 				Type:       et,
 				Fields:     edgeEnt.Fields,

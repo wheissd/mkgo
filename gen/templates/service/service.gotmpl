@@ -51,9 +51,9 @@ logger: logger,
         {{- range $i, $f := .Fields }}
             {{- if and (not $f.Immutable) (not $f.AutoUpdate) (not $f.Phantom) (not (techField .)) (not (eq .Name "id")) }}
             {{- if not $f.Required }}
-                if {{ setReqFormat $e . }}.IsSet() {
+                if req.{{ pascal $f.Name }}.IsSet() {
             {{- end }}
-            b.Set{{ pascal .Name }}({{ setReqFormat $e . }}{{- if not $f.Required }}.Get(){{ end }})
+            b.Set{{ pascal .Name }}({{ setReqFormat $e . }})
             {{- if not $f.Required }}
                 }
             {{- end }}
@@ -63,7 +63,7 @@ logger: logger,
         // Set relations
         {{- range $i, $f := .Edges }}
             {{ if .Inverse }}
-                b.Set{{ pascal .Name }}ID(req.{{ pascal .Name }}ID)
+                b.Set{{ pascal .Name }}ID(req.{{ pascal .FieldName }})
             {{ end }}
         {{- end }}
         // Persist to storage.
@@ -109,8 +109,8 @@ logger: logger,
         // Set relations.
         {{- range $i, $f := .Edges }}
             {{ if .Inverse }}
-                if req.{{ pascal .Name }}ID.IsSet() {
-                b.Set{{ pascal .Name }}ID(req.{{ pascal .Name }}ID.Get())
+                if req.{{ pascal .FieldName }}.IsSet() {
+                b.Set{{ pascal .Name }}ID(req.{{ pascal .FieldName }}.Get())
                 }
             {{ end }}
         {{- end }}
@@ -161,7 +161,7 @@ logger: logger,
         {{- range $i, $edge := .Edges }}
             {{- if $edge.Inverse }}
                 if params.Filter{{ pascal $edge.Name }}ID.IsSet() {
-                q.Where({{ lower $e.Name }}.{{ pascal $edge.Name }}IDEQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
+                q.Where({{ lower $e.Name }}.{{ pascal $edge.FieldName }}EQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
                 }
             {{- else }}
                 if params.Filter{{ pascal $edge.Name }}IDs.IsSet() {

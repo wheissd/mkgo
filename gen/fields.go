@@ -69,10 +69,14 @@ func rFieldType(t reflect.Type) string {
 }
 
 func setReqFormat(e entity.Entity, f entity.Field) string {
-	if f.Type.Type == entity.TypeEnum {
-		return fmt.Sprintf("%s.%s(req.%s)", strings.ToLower(e.Name), cases.Pascal(f.Name), cases.Pascal(f.Name))
+	getter := ""
+	if !f.Required {
+		getter = ".Get()"
 	}
-	return fmt.Sprintf("req.%s", cases.Pascal(f.Name))
+	if f.Type.Type == entity.TypeEnum {
+		return fmt.Sprintf("%s.%s(req.%s%s)", strings.ToLower(e.Name), cases.Pascal(f.Name), cases.Pascal(f.Name), getter)
+	}
+	return fmt.Sprintf("req.%s%s", cases.Pascal(f.Name), getter)
 }
 
 func updateReqFormat(e entity.Entity, f entity.Field) string {
@@ -107,6 +111,23 @@ func fieldType(f entity.Field) string {
 		res += f.Type.Import + "."
 	}
 	res += f.Type.Name
+	return res
+}
+
+func fieldDefault(f entity.Field) string {
+	res := "\"\""
+	if f.Type.IsPointer {
+		return "nil"
+	}
+	if f.Type.Import != "" {
+		return f.Type.Import + "." + f.Type.Name + "{}"
+	}
+	switch f.Type.Type {
+	case entity.TypeInt, entity.TypeInt8, entity.TypeInt16, entity.TypeInt32, entity.TypeInt64,
+		entity.TypeFloat64, entity.TypeFloat32:
+		return "0"
+	}
+
 	return res
 }
 
