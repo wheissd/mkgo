@@ -146,6 +146,7 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 		}
 		response := {{ .Name }}ListHeaders{
 			Response: New{{ .Name }}List(list.Items),
+			ContentRange: list.Count,
 		}
 		return &response, nil
 	}

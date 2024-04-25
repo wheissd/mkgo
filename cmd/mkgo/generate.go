@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,13 +37,21 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 		internalMode = true
 	}
 
+	cmd.logger.Debug("start reading runInfoFile")
 	runInfoBytes, err := os.ReadFile(runInfoFile)
+	unmarshalRunInfo := true
 	if err != nil {
-		return err
+		if err != os.ErrNotExist && !errors.Is(err, fs.ErrNotExist) {
+			cmd.logger.Error("start reading runInfoFile err", zap.Error(err))
+			return err
+		}
+		unmarshalRunInfo = false
 	}
 	var ri runInfo
-	if err = json.Unmarshal(runInfoBytes, &ri); err != nil {
-		return err
+	if unmarshalRunInfo {
+		if err = json.Unmarshal(runInfoBytes, &ri); err != nil {
+			return err
+		}
 	}
 
 	entPath := "./internal/ent"

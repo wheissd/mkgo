@@ -19,6 +19,36 @@ import (
     "go.uber.org/zap"
 )
 
+{{- define "listQuery" }}
+    {{- $q := .QueryVar }}
+    {{- $root := .Root }}
+    {{- $e := .Entity }}
+    {{ .QueryVar }} := h.client.{{ .Entity.Name }}.Query()
+    {{- if .WithModifier }}
+    if err := h.{{ .Entity.Name }}ListQueryModifier(ctx, {{ .QueryVar }}); err != nil {
+    return {{ .Entity.Name }}List{}, err
+    }
+    {{- end }}
+    {{- range $i, $edge := .Entity.Edges }}
+        {{- if $edge.Inverse }}
+            if params.Filter{{ pascal $edge.Name }}ID.IsSet() {
+            {{ $q }}.Where({{ lower $e.Name }}.{{ pascal $edge.FieldName }}EQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
+            }
+        {{- else }}
+            if params.Filter{{ pascal $edge.Name }}IDs.IsSet() {
+            {{ $q }}.Where({{ lower $e.Name }}.Has{{ pascal $edge.Name }}With({{ lower $edge.EntityName }}.IDIn(params.Filter{{ pascal $edge.Name }}IDs.Get()...)))
+            }
+        {{- end }}
+    {{- end }}
+    {{- range .Entity.Fields }}
+        {{- if  and (needFilter $root .) (not .Edge) }}
+            if params.Filter{{ pascal .Name }}.IsSet() {
+            {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
+            }
+        {{- end }}
+    {{- end }}
+{{- end }}
+
 type Service struct {
 {{- if gt (len .Entities) 0 }}
     client *gen.Client
@@ -153,29 +183,8 @@ logger: logger,
         }
         return nil
         }
-        func (h *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
-        q := h.client.{{ .Name }}.Query()
-        if err := h.{{ .Name }}ListQueryModifier(ctx, q); err != nil {
-            return {{ .Name }}List{}, err
-        }
-        {{- range $i, $edge := .Edges }}
-            {{- if $edge.Inverse }}
-                if params.Filter{{ pascal $edge.Name }}ID.IsSet() {
-                q.Where({{ lower $e.Name }}.{{ pascal $edge.FieldName }}EQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
-                }
-            {{- else }}
-                if params.Filter{{ pascal $edge.Name }}IDs.IsSet() {
-                q.Where({{ lower $e.Name }}.Has{{ pascal $edge.Name }}With({{ lower $edge.EntityName }}.IDIn(params.Filter{{ pascal $edge.Name }}IDs.Get()...)))
-                }
-            {{- end }}
-        {{- end }}
-        {{- range .Fields }}
-            {{- if  and (needFilter $root .) (not .Edge) }}
-                if params.Filter{{ pascal .Name }}.IsSet() {
-                q.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
-                }
-            {{- end }}
-        {{- end }}
+    func (h *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
+        {{ template "listQuery" dict "Entity" $e "QueryVar" "q" "Root" $root "WithModifier" true }}
         {{ template "queryEdges" . }}
         page := 1
         if params.Page.IsSet() {
@@ -185,6 +194,15 @@ logger: logger,
         if params.ItemsPerPage.IsSet() {
             itemsPerPage = params.ItemsPerPage.Get()
         }
+        var countRes []struct {
+            Count int
+        }
+        {{ template "listQuery" dict "Entity" $e "QueryVar" "cQ" "Root" $root }}
+        err := cQ.Aggregate(gen.Count()).Scan(ctx, &countRes)
+        if err != nil {
+            return {{ .Name }}List{}, err
+        }
+
         q.Limit(itemsPerPage).Offset((page - 1) * itemsPerPage)
 
         es, err := q.All(ctx)
@@ -202,9 +220,11 @@ logger: logger,
         r := New{{ .Name }}List(es)
         response := {{ .Name }}List{}
         response.Items = r
+        response.Count = countRes[0].Count
 
         return response, nil
-        }
+    }
+
     func (h *Service) Read{{ .Name }}(ctx context.Context, params {{ .Name }}ReadParams) ({{ .Name }}, error) {
         q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.IDEQ(params.ID))
         if err := h.{{ .Name }}ReadQueryModifier(ctx, q); err != nil {

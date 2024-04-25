@@ -16,7 +16,7 @@ func updateFieldsOrder(sch *entity.Schema) error {
 	fOrderFile, err := os.ReadFile(fName)
 	parseFOrder, parseEOrder := true, true
 	if err != nil {
-		if err != os.ErrNotExist {
+		if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 		parseFOrder = false
