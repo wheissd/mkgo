@@ -9,8 +9,10 @@ func (a annotation) Name() string {
 }
 
 type EdgeConfig struct {
-	readMap  modeMap
-	writeMap modeMap
+	readMap   modeMap
+	createMap modeMap
+	updateMap modeMap
+	deleteMap modeMap
 }
 
 const EdgeConfigID = "EdgeConfig"
@@ -27,13 +29,33 @@ type edgeConfigOption interface {
 	IsOption()
 }
 
-func (e *EdgeConfig) EnableWrite(opts ...edgeConfigOption) *EdgeConfig {
-	setModeMap(true, &e.writeMap, wrapOpts(opts...))
+func (e *EdgeConfig) EnableCreate(opts ...edgeConfigOption) *EdgeConfig {
+	setModeMap(true, &e.createMap, wrapOpts(opts...))
 	return e
 }
 
-func (e *EdgeConfig) DisableWrite(opts ...entityConfigOption) *EdgeConfig {
-	setModeMap(false, &e.writeMap, opts...)
+func (e *EdgeConfig) DisableCreate(opts ...entityConfigOption) *EdgeConfig {
+	setModeMap(false, &e.createMap, opts...)
+	return e
+}
+
+func (e *EdgeConfig) EnableUpdate(opts ...edgeConfigOption) *EdgeConfig {
+	setModeMap(true, &e.updateMap, wrapOpts(opts...))
+	return e
+}
+
+func (e *EdgeConfig) DisableUpdate(opts ...entityConfigOption) *EdgeConfig {
+	setModeMap(false, &e.updateMap, opts...)
+	return e
+}
+
+func (e *EdgeConfig) EnableDelete(opts ...edgeConfigOption) *EdgeConfig {
+	setModeMap(true, &e.deleteMap, wrapOpts(opts...))
+	return e
+}
+
+func (e *EdgeConfig) DisableDelete(opts ...entityConfigOption) *EdgeConfig {
+	setModeMap(false, &e.deleteMap, opts...)
 	return e
 }
 
@@ -51,6 +73,14 @@ func (c *EdgeConfig) GetReadEnabled(mode string) *bool {
 	return c.readMap.Get(mode)
 }
 
-func (c *EdgeConfig) GetWriteEnabled(mode string) *bool {
-	return c.writeMap.Get(mode)
+func (c *EdgeConfig) GetCreateEnabled(mode string) *bool {
+	return c.createMap.Get(mode)
+}
+
+func (c *EdgeConfig) GetUpdateEnabled(mode string) *bool {
+	return c.updateMap.Get(mode)
+}
+
+func (c *EdgeConfig) GetDeleteEnabled(mode string) *bool {
+	return c.deleteMap.Get(mode)
 }

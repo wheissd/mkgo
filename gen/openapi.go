@@ -46,51 +46,48 @@ func genOpenapi(logger *zap.Logger, sch *entity.Schema, cfg config.GenConfigItem
 			getList = makeGetList(sch, entity)
 			//optsMany = makeListOptions(entity)
 		}
-		paths["/"+entity.Path] = &openapi3.PathItem{
+		paths.Set("/"+entity.Path, &openapi3.PathItem{
 			Get:     getList,
 			Options: optsMany,
 			Post:    create,
-		}
-		paths["/"+entity.Path+"/{id}"] = &openapi3.PathItem{
+		})
+		paths.Set("/"+entity.Path+"/{id}", &openapi3.PathItem{
 			Put:     put,
 			Options: optsOne,
 			Get:     getOne,
 			Delete:  del,
-		}
+		})
 		if needReadManyOp(sch, entity) {
 			schemas[fmt.Sprintf("%sList", entity.Name)] = &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
-					Type:  openapi3.TypeArray,
+					Type:  &openapi3.Types{openapi3.TypeArray},
 					Items: openapi3.NewSchemaRef(fmt.Sprintf("#/components/schemas/%s", entity.Name), &openapi3.Schema{}),
 				},
 			}
 		}
 
-		if needReadOneOp(sch, entity) ||
-			needCreateOp(sch, entity) ||
-			needUpdateOp(sch, entity) ||
-			needReadManyOp(sch, entity) {
+		if needEntity(sch, entity) {
 			schemas[fmt.Sprintf("%s", entity.Name)] = &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
-					Type:       openapi3.TypeObject,
+					Type:       &openapi3.Types{openapi3.TypeObject},
 					Properties: readProperties(logger, sch, entity),
 					Required:   readPropertiesRequired(entity),
 				},
 			}
 		}
-		if needCreateOp(sch, entity) {
+		if needCreateEntity(sch, entity) {
 			schemas[fmt.Sprintf("Create%s", entity.Name)] = &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
-					Type:       openapi3.TypeObject,
+					Type:       &openapi3.Types{openapi3.TypeObject},
 					Properties: createProperties(entity),
 					Required:   createPropertiesRequired(entity),
 				},
 			}
 		}
-		if needUpdateOp(sch, entity) {
+		if needUpdateEntity(sch, entity) {
 			schemas[fmt.Sprintf("Update%s", entity.Name)] = &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
-					Type:       openapi3.TypeObject,
+					Type:       &openapi3.Types{openapi3.TypeObject},
 					Properties: updateProperties(entity),
 				},
 			}
@@ -98,17 +95,17 @@ func genOpenapi(logger *zap.Logger, sch *entity.Schema, cfg config.GenConfigItem
 	}
 	schemas["Error"] = &openapi3.SchemaRef{
 		Value: &openapi3.Schema{
-			Type: openapi3.TypeObject,
+			Type: &openapi3.Types{openapi3.TypeObject},
 			Properties: openapi3.Schemas{
 				"code": &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:   openapi3.TypeInteger,
+						Type:   &openapi3.Types{openapi3.TypeInteger},
 						Format: "int64",
 					},
 				},
 				"message": &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type: openapi3.TypeString,
+						Type: &openapi3.Types{openapi3.TypeString},
 					},
 				},
 			},
@@ -126,10 +123,10 @@ func genOpenapi(logger *zap.Logger, sch *entity.Schema, cfg config.GenConfigItem
 			Version:     "0.0.1",
 		},
 		Servers: servers,
-		Paths:   paths,
+		Paths:   &paths,
 		Components: &openapi3.Components{
 			Schemas: schemas,
-			Responses: openapi3.Responses{
+			Responses: openapi3.ResponseBodies{
 				"400":   &errorResponse,
 				"403":   &errorResponse,
 				"404":   &errorResponse,
@@ -151,19 +148,19 @@ var (
 				"application/json": &openapi3.MediaType{
 					Schema: &openapi3.SchemaRef{
 						Value: &openapi3.Schema{
-							Type: openapi3.TypeArray,
+							Type: &openapi3.Types{openapi3.TypeArray},
 							Items: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type: openapi3.TypeObject,
+									Type: &openapi3.Types{openapi3.TypeObject},
 									Properties: openapi3.Schemas{
 										"code": &openapi3.SchemaRef{
 											Value: &openapi3.Schema{
-												Type: openapi3.TypeInteger,
+												Type: &openapi3.Types{openapi3.TypeInteger},
 											},
 										},
 										"message": &openapi3.SchemaRef{
 											Value: &openapi3.Schema{
-												Type: openapi3.TypeString,
+												Type: &openapi3.Types{openapi3.TypeString},
 											},
 										},
 									},

@@ -39,7 +39,9 @@ type GenConfigItem struct {
 	// enable edges read by default, set edge annotations to hide
 	EnableEdgeReadByDefault bool
 	// enable edges write by default, set edge annotations to hide
-	EnableEdgeWriteByDefault bool
+	EnableEdgeCreateByDefault bool
+	EnableEdgeUpdateByDefault bool
+	EnableEdgeDeleteByDefault bool
 	// enable filtering by default, set field annotations to hide
 	EnableFilterByDefault bool
 	// max level of with nesting in get(one/list) handlers, 0 = not limited

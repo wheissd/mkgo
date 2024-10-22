@@ -9,6 +9,7 @@ import (
 type Field struct {
 	Name       string
 	Required   bool
+	Optional   bool
 	Immutable  bool
 	AutoUpdate bool
 	Edge       bool
@@ -205,4 +206,14 @@ func (t FieldType) Name() string {
 		return "float64"
 	}
 	return ""
+}
+
+func (t FieldType) CanRange() bool {
+	switch t {
+	case TypeInt, TypeInt8, TypeInt16, TypeInt32, TypeInt64, TypeFloat32,
+		TypeFloat64, TypeDate, TypeDateTime, TypeTime:
+		return true
+	default:
+		return false
+	}
 }

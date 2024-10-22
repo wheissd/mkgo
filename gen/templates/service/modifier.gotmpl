@@ -2,7 +2,7 @@ package service
 
 import (
 {{- if gt (len .Entities) 0 }}
-"{{ .Pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+"{{ .Pkg }}/{{ .RootPkg }}{{ .EntPath }}/gen"
 "context"
 {{- end }}
 )

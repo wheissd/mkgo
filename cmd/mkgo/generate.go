@@ -138,7 +138,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	}
 
 	apigenPath := fmt.Sprintf("%s/%s%s%s/cmd/apigen", pkgInfo.Pkg, rootDir, apigenDelim, apiCfg.OutputPath)
-	err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent/gen")
+	err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent")
 	if err != nil {
 		return err
 	}

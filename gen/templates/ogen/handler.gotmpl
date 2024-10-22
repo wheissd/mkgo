@@ -8,9 +8,8 @@ import (
 {{- end }}
 
 		{{ $pkg := .Pkg }}
-		{{ $entPath := .EntPath }}
 {{- if gt (len .Entities) 0 }}
-    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}/gen"
 	"{{ $pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
 {{- end }}
     "go.uber.org/zap"
@@ -61,15 +60,43 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 {{ range $i, $e := .Entities }}
 	{{ if needCreateOp $root . }}
 	func (h *HandlerImpl) Create{{ .Name }}(ctx context.Context, req *Create{{ .Name }}) (Create{{ .Name }}Res, error) {
+		sReq := service.Create{{ .Name }} {
+			{{- range .Fields }}
+				{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) .Required }}
+				{{ pascal .Name }}: {{ if isEnum . }}string({{ end }}req.{{ pascal .Name }}{{ if isEnum . }}){{ end }},
+				{{- end }}
+			{{- end }}
+		}
+		{{- range .Fields }}
+			{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) (not .Required) }}
+			if v, ok := req.{{ pascal .Name }}.Get(); ok {
+			sReq.{{ pascal .Name }}.Set(v)
+			}
+			{{- end }}
+		{{- end }}
+		{{- if .HasCreateEdges }}
+		if edges, ok := req.Edges.Get(); ok {
+			{{- range .Edges }}
+			{{- $edge := . }}
+			{{- if .WithCreate }}
+			{{- if .ToMany }}
+			for i := range edges.{{ pascal .Name }} {
+				sReq.Edges.{{ pascal .Name }} = append(sReq.Edges.{{ pascal .Name }}, service.Create{{ pascal .EntityName }}{
+					{{- range .Entity.Fields }}
+						{{- if and (not .Edge) (not (techField .)) (not (isIDField .)) }}
+						{{ pascal .Name }}: edges.{{ pascal $edge.Name }}[i].{{ pascal .Name }},
+						{{- end }}
+					{{- end }}
+				})
+			}
+			{{- end }}
+			{{- end }}
+			{{- end }}
+		}
+		{{- end }}
 		{{ camel .Name }}, err := h.service.Create{{ .Name }}(
 			ctx,
-			service.Create{{ .Name }} {
-				{{- range .Fields }}
-					{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
-					{{ pascal .Name }}: {{ if isEnum . }}string({{ end }}req.{{ pascal .Name }}{{ if isEnum . }}){{ end }},
-					{{- end }}
-				{{- end }}
-			},
+			sReq,
 			)
 			if err != nil {
 				return nil, err
@@ -119,6 +146,14 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 				if v, ok := params.Filter{{ pascal .Name }}.Get(); ok {
 					sParams.Filter{{ pascal .Name }}.Set(v)
 				}
+				{{- if .Type.Type.CanRange }}
+				if v, ok := params.FilterRangeFrom{{ pascal .Name }}.Get(); ok {
+					sParams.FilterRangeFrom{{ pascal .Name }}.Set(v)
+				}
+				if v, ok := params.FilterRangeTo{{ pascal .Name }}.Get(); ok {
+					sParams.FilterRangeTo{{ pascal .Name }}.Set(v)
+				}
+				{{- end }}
 			{{- end }}
 		{{- end }}
 		{{ if .HasReadEdges }}

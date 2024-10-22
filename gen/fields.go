@@ -79,6 +79,21 @@ func setReqFormat(e entity.Entity, f entity.Field) string {
 	return fmt.Sprintf("req.%s%s", cases.Pascal(f.Name), getter)
 }
 
+func setEdgeReqFormat(e entity.Edge, f entity.Field) string {
+	reqPart := "req.Edges." + cases.Pascal(e.Name) + "[i]"
+	getter := ""
+	if f.Edge {
+		return "e.ID"
+	}
+	if !f.Required {
+		getter = ".Get()"
+	}
+	if f.Type.Type == entity.TypeEnum {
+		return fmt.Sprintf("%s.%s(%s.%s%s)", strings.ToLower(e.EntityName), cases.Pascal(f.Name), reqPart, cases.Pascal(f.Name), getter)
+	}
+	return fmt.Sprintf("%s.%s%s", reqPart, cases.Pascal(f.Name), getter)
+}
+
 func updateReqFormat(e entity.Entity, f entity.Field) string {
 	if f.Type.Type == entity.TypeEnum {
 		return fmt.Sprintf("%s.%s(req.%s.Get())", strings.ToLower(e.Name), cases.Pascal(f.Name), cases.Pascal(f.Name))
@@ -126,6 +141,8 @@ func fieldDefault(f entity.Field) string {
 	case entity.TypeInt, entity.TypeInt8, entity.TypeInt16, entity.TypeInt32, entity.TypeInt64,
 		entity.TypeFloat64, entity.TypeFloat32:
 		return "0"
+	case entity.TypeBool:
+		return "false"
 	}
 
 	return res

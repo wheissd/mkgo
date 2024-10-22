@@ -36,6 +36,7 @@ var fns = template.FuncMap{
 	"snake":                     cases.Snake,
 	"lower":                     strings.ToLower,
 	"setReqFormat":              setReqFormat,
+	"setEdgeReqFormat":          setEdgeReqFormat,
 	"updateReqFormat":           updateReqFormat,
 	"isEnum":                    isEnum,
 	"needReadOneOp":             needReadOneOp,
@@ -66,6 +67,7 @@ var fns = template.FuncMap{
 		return v2
 	},
 	"needFilter": needFilter,
+	"needEntity": needEntity,
 }
 
 const (

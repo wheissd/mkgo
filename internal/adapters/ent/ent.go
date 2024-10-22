@@ -56,6 +56,7 @@ func Parse(entities []lib.PreEntity, schema *entity.Schema, mode string) {
 				Type:       et,
 				Fields:     edgeEnt.Fields,
 				Inverse:    edge.Descriptor().Inverse,
+				RefName:    edge.Descriptor().RefName,
 				ToOne:      toOne,
 			}
 
@@ -70,6 +71,18 @@ func Parse(entities []lib.PreEntity, schema *entity.Schema, mode string) {
 			if entity.NeedEdgeRead(schema, cfgAntn) {
 				edg.WithRead = true
 				e.HasReadEdges = true
+			}
+			if entity.NeedEdgeCreate(schema, cfgAntn) {
+				edg.WithCreate = true
+				e.HasCreateEdges = true
+			}
+			if entity.NeedEdgeUpdate(schema, cfgAntn) {
+				edg.WithUpdate = true
+				e.HasUpdateEdges = true
+			}
+			if entity.NeedEdgeDelete(schema, cfgAntn) {
+				edg.WithDelete = true
+				e.HasDeleteEdges = true
 			}
 
 			e.Edges = append(e.Edges, edg)

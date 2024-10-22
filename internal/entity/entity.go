@@ -20,6 +20,7 @@ type Entity struct {
 	HasReadEdges   bool
 	HasCreateEdges bool
 	HasUpdateEdges bool
+	HasDeleteEdges bool
 	Config         *annotations.EntityConfig
 }
 

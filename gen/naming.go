@@ -1,7 +1,7 @@
 package gen
 
 func schemaEntityNameRead(n string) string {
-	return n + "Read"
+	return "Read" + n
 }
 
 func schemaEntityNameAsIs(n string) string {
@@ -9,9 +9,9 @@ func schemaEntityNameAsIs(n string) string {
 }
 
 func schemaEntityNameCreate(n string) string {
-	return n + "Create"
+	return "Create" + n
 }
 
 func schemaEntityNameUpdate(n string) string {
-	return n + "Update"
+	return "Update" + n
 }

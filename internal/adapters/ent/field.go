@@ -140,13 +140,14 @@ func (op *parseOp) parseFields(e lib.PreEntity) parseFieldsResult {
 		if rField.IsExported() && !ok &&
 			rField.Name != "ID" && rField.Name != "Edges" {
 			t := rFieldType(rField.Type.Kind())
+			format := openapiParamFormatFromEntityType(t)
 			schemaFields[rField.Name] = entity.Field{
 				Name:    rField.Name,
 				Phantom: true,
 				Openapi: entity.Openapi{
-					Type: rField.Type.String(),
-					//Format:    "",
-					//HasFormat: false,
+					Type:      openapiFieldTypeFromEntityType(t),
+					Format:    format,
+					HasFormat: format != "",
 				},
 				RType: rField.Type,
 				Type: entity.TypeInfo{
@@ -171,9 +172,11 @@ func (op *parseOp) parseFields(e lib.PreEntity) parseFieldsResult {
 }
 
 func (op *parseOp) parseField(field ent.Field) entity.Field {
+	required := !field.Descriptor().Optional && field.Descriptor().Default == nil
 	f := entity.Field{
 		Name:     field.Descriptor().Name,
-		Required: !field.Descriptor().Optional,
+		Required: required,
+		Optional: field.Descriptor().Optional,
 		Openapi: entity.Openapi{
 			Type:      openapiFieldType(field.Descriptor()),
 			HasFormat: openapiHasFormat(field.Descriptor()),
@@ -279,6 +282,44 @@ func openapiFieldType(d *entfield.Descriptor) string {
 		res = "string"
 	case entfield.TypeFloat64, entfield.TypeFloat32:
 		res = "number"
+	}
+	return res
+}
+
+func openapiFieldTypeFromEntityType(t entity.FieldType) string {
+	var res string
+	switch t {
+	case entity.TypeBool:
+		res = "boolean"
+	case entity.TypeString, entity.TypeUUID, entity.TypeEnum:
+		res = "string"
+	case entity.TypeInt, entity.TypeInt64, entity.TypeInt32, entity.TypeInt16, entity.TypeInt8:
+		res = "integer"
+	case entity.TypeTime:
+		res = "string"
+	case entity.TypeFloat64, entity.TypeFloat32:
+		res = "number"
+	}
+	return res
+}
+
+func openapiParamFormatFromEntityType(t entity.FieldType) string {
+	var res string
+	switch t {
+	case entity.TypeTime:
+		res = "date-time"
+	case entity.TypeFloat64:
+		res = "double"
+	case entity.TypeUUID:
+		res = "uuid"
+	case entity.TypeInt64:
+		res = "int64"
+	case entity.TypeInt32:
+		res = "int32"
+	case entity.TypeInt16:
+		res = "int16"
+	case entity.TypeInt8:
+		res = "int8"
 	}
 	return res
 }

@@ -5,17 +5,16 @@ package service
 {{- end }}
 
 {{- define "newField" }}
-	{{- if and (not .Required) (not .Type.IsPointer) }}Opt[{{ fieldType . }}]{isSet:{{ template "fieldVal" . }} != {{ fieldDefault . }},val: {{ template "fieldVal" . }}}{{ else }}{{ template "fieldVal" . }}{{ end }}
+	{{- if and (.Optional) (not .Type.IsPointer) }}Opt[{{ fieldType . }}]{isSet:{{ template "fieldVal" . }} != {{ fieldDefault . }},val: {{ template "fieldVal" . }}}{{ else }}{{ template "fieldVal" . }}{{ end }}
 {{- end }}
 
 {{- $pkg := .Pkg }}
-{{- $entPath := .EntPath }}
 import (
 	{{- range (index .Imports "entities") }}
 		"{{ . }}"
 	{{- end }}
 	{{- if gt (len .Entities) 0 }}
-		"{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+		"{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}/gen"
 	{{- end }}
 	"github.com/google/uuid"
 )
@@ -52,7 +51,7 @@ func (o *Opt[T])Get() T {
 	{{ $e := . }}
 type {{ .Name }} struct {
 	{{ range .Fields }}
-	{{ pascal .Name }} {{ if or (not .Required) .Type.IsPointer }}Opt[{{ end }}{{ fieldType . }}{{ if or (not .Required) .Type.IsPointer }}]{{ end }}  `json:"{{ snake .Name }}"`
+	{{ pascal .Name }} {{ if or .Optional .Type.IsPointer }}Opt[{{ end }}{{ fieldType . }}{{ if or .Optional .Type.IsPointer }}]{{ end }}  `json:"{{ snake .Name }}"`
 	{{- end }}
 	Edges {{ .Name }}Edges `json:"edges"`
 }
@@ -89,6 +88,15 @@ type Create{{ .Name }} struct {
 		{{ pascal .Name }} {{ if not .Required }}Opt[{{ end }}{{ fieldType . }}{{ if not .Required }}]{{ end }}  `json:"{{ snake .Name }}"`
 		{{- end }}
 	{{- end }}
+	{{- if .HasCreateEdges }}
+	Edges struct {
+	{{- range .Edges }}
+		{{- if .ToMany }}
+		{{ pascal .Name }} []Create{{ .EntityName }}
+		{{- end }}
+	{{- end }}
+	} `json:"{{ snake .Name }}"`
+	{{- end }}
 }
 
 type Update{{ .Name }} struct {
@@ -123,6 +131,10 @@ type {{ .Name }}ListParams struct {
 	{{- range .Fields }}
 		{{- if  and (needFilter $sch .) (not .Edge) }}
 			Filter{{ pascal .Name }} Opt[{{ fieldType . }}]
+			{{- if .Type.Type.CanRange }}
+			FilterRangeFrom{{ pascal .Name }} Opt[{{ fieldType . }}]
+			FilterRangeTo{{ pascal .Name }} Opt[{{ fieldType . }}]
+			{{- end }}
 		{{- end }}
 	{{- end }}
 	With *{{ pascal $e.Name }}QueryEdges

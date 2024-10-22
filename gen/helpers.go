@@ -16,6 +16,23 @@ func needReadOneOp(sch *entity.Schema, e *entity.Entity) bool {
 	return enabled
 }
 
+func needEntity(sch *entity.Schema, e *entity.Entity) bool {
+	enabled := needReadOneOp(sch, e) || needReadManyOp(sch, e) || needCreateOp(sch, e) || needUpdateOp(sch, e)
+	if enabled {
+		return true
+	}
+	for _, e := range e.Edges {
+		if e.Inverse {
+			for _, revEdge := range e.Entity.Edges {
+				if revEdge.Name == e.RefName && revEdge.WithRead {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func needReadManyOp(sch *entity.Schema, e *entity.Entity) bool {
 	enabled := sch.Cfg.EnableDefaultReadMany
 	if e.Config != nil && e.Config.GetReadManyOpEnabled(sch.Cfg.Mode) != nil {
@@ -32,10 +49,44 @@ func needCreateOp(sch *entity.Schema, e *entity.Entity) bool {
 	return enabled
 }
 
+func needCreateEntity(sch *entity.Schema, e *entity.Entity) bool {
+	enabled := sch.Cfg.EnableDefaultCreate
+	if e.Config != nil && e.Config.GetCreateOpEnabled(sch.Cfg.Mode) != nil {
+		enabled = *(e.Config.GetCreateOpEnabled(sch.Cfg.Mode))
+	}
+	for _, e := range e.Edges {
+		if e.Inverse {
+			for _, revEdge := range e.Entity.Edges {
+				if revEdge.Name == e.RefName && revEdge.WithCreate {
+					return true
+				}
+			}
+		}
+	}
+	return enabled
+}
+
 func needUpdateOp(sch *entity.Schema, e *entity.Entity) bool {
 	enabled := sch.Cfg.EnableDefaultUpdate
 	if e.Config != nil && e.Config.GetUpdateOpEnabled(sch.Cfg.Mode) != nil {
 		enabled = *(e.Config.GetUpdateOpEnabled(sch.Cfg.Mode))
+	}
+	return enabled
+}
+
+func needUpdateEntity(sch *entity.Schema, e *entity.Entity) bool {
+	enabled := sch.Cfg.EnableDefaultUpdate
+	if e.Config != nil && e.Config.GetUpdateOpEnabled(sch.Cfg.Mode) != nil {
+		enabled = *(e.Config.GetUpdateOpEnabled(sch.Cfg.Mode))
+	}
+	for _, e := range e.Edges {
+		if e.Inverse {
+			for _, revEdge := range e.Entity.Edges {
+				if revEdge.Name == e.RefName && revEdge.WithUpdate {
+					return true
+				}
+			}
+		}
 	}
 	return enabled
 }

@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -34,7 +35,7 @@ func makeWithParam(edges []*entity.Edge) *openapi3.ParameterRef {
 				Required: false,
 				Schema: &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type: openapi3.TypeString,
+						Type: &openapi3.Types{openapi3.TypeString},
 					},
 				},
 			},
@@ -45,10 +46,38 @@ func makeWithParam(edges []*entity.Edge) *openapi3.ParameterRef {
 
 func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operation {
 	params := openapi3.Parameters{}
+	// add filters params
 	for _, f := range entityItem.Fields {
 		t := f.Openapi.Type
 		if t == "" {
 			t = f.Type.Type.OApiTypeName()
+		}
+		if f.Type.Type.CanRange() {
+			params = append(params, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					In:          openapi3.ParameterInQuery,
+					Name:        "filterRangeFrom" + cases.Pascal(f.Name),
+					Description: "Range from filter by " + f.Name + " field",
+					Schema: &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type:   &openapi3.Types{t},
+							Format: paramFormat(f),
+						},
+					},
+				},
+			}, &openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					In:          openapi3.ParameterInQuery,
+					Name:        "filterRangeTo" + cases.Pascal(f.Name),
+					Description: "Range to filter by " + f.Name + " field",
+					Schema: &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type:   &openapi3.Types{t},
+							Format: paramFormat(f),
+						},
+					},
+				},
+			})
 		}
 		params = append(params, &openapi3.ParameterRef{
 			Value: &openapi3.Parameter{
@@ -57,7 +86,7 @@ func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operat
 				Description: "Filter by " + f.Name + " field",
 				Schema: &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:   t,
+						Type:   &openapi3.Types{t},
 						Format: paramFormat(f),
 					},
 				},
@@ -72,7 +101,7 @@ func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operat
 				Description: "Filter by " + edge.EntityName + " relation id",
 				Schema: &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:   openapi3.TypeString,
+						Type:   &openapi3.Types{openapi3.TypeString},
 						Format: "uuid",
 					},
 				},
@@ -83,6 +112,50 @@ func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operat
 		params = append(params, withParam)
 	}
 
+	responses := openapi3.NewResponses(
+		openapi3.WithStatus(http.StatusOK, &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				Description: lo.ToPtr(fmt.Sprintf("result %s options headers", entityItem.Name)),
+				Headers: openapi3.Headers{
+					"Content-Range": {
+						Value: &openapi3.Header{
+							Parameter: openapi3.Parameter{
+								Required: true,
+								Schema: &openapi3.SchemaRef{
+									Value: &openapi3.Schema{
+										Type:        &openapi3.Types{openapi3.TypeInteger},
+										Description: "Total items count",
+									},
+								},
+							},
+						},
+					},
+				},
+				Content: openapi3.Content{
+					"application/json": &openapi3.MediaType{
+						Schema: &openapi3.SchemaRef{
+							Ref: fmt.Sprintf("#/components/schemas/%sList", entityItem.Name),
+						},
+					},
+				},
+			},
+		}),
+		openapi3.WithStatus(http.StatusBadRequest, &openapi3.ResponseRef{
+			Ref: "#/components/responses/400",
+		}),
+		openapi3.WithStatus(http.StatusNotFound, &openapi3.ResponseRef{
+			Ref: "#/components/responses/404",
+		}),
+		openapi3.WithStatus(http.StatusConflict, &openapi3.ResponseRef{
+			Ref: "#/components/responses/409",
+		}),
+		openapi3.WithStatus(http.StatusInternalServerError, &openapi3.ResponseRef{
+			Ref: "#/components/responses/500",
+		}),
+	)
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			entityItem.Name,
@@ -98,7 +171,7 @@ func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operat
 					Description: "what page to render",
 					Schema: &openapi3.SchemaRef{
 						Value: &openapi3.Schema{
-							Type: openapi3.TypeInteger,
+							Type: &openapi3.Types{openapi3.TypeInteger},
 							Min:  lo.ToPtr(float64(1)),
 						},
 					},
@@ -111,61 +184,46 @@ func makeGetList(sch *entity.Schema, entityItem *entity.Entity) *openapi3.Operat
 					Description: "item count to render per page",
 					Schema: &openapi3.SchemaRef{
 						Value: &openapi3.Schema{
-							Type: openapi3.TypeInteger,
+							Type: &openapi3.Types{openapi3.TypeInteger},
 							Min:  lo.ToPtr(float64(1)),
 							Max:  lo.ToPtr(float64(255)),
 						},
 					},
 				},
 			}}, params...),
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("result %s options headers", entityItem.Name)),
-					Headers: openapi3.Headers{
-						"Content-Range": {
-							Value: &openapi3.Header{
-								Parameter: openapi3.Parameter{
-									Required: true,
-									Schema: &openapi3.SchemaRef{
-										Value: &openapi3.Schema{
-											Type:        openapi3.TypeInteger,
-											Description: "Total items count",
-										},
-									},
-								},
-							},
-						},
-					},
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%sList", entityItem.Name),
-							},
-						},
-					},
-				},
-			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
-		},
+		Responses: responses,
 	}
 }
 
 func makeCreate(entity *entity.Entity) *openapi3.Operation {
+	responses := openapi3.NewResponses()
+	responses.Set("200", &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: lo.ToPtr(fmt.Sprintf("%screated", entity.Name)),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
+					},
+				},
+			},
+		},
+	})
+	responses.Set("400", &openapi3.ResponseRef{
+		Ref: "#/components/responses/400",
+	})
+	responses.Set("404", &openapi3.ResponseRef{
+		Ref: "#/components/responses/404",
+	})
+	responses.Set("409", &openapi3.ResponseRef{
+		Ref: "#/components/responses/409",
+	})
+	responses.Set("500", &openapi3.ResponseRef{
+		Ref: "#/components/responses/500",
+	})
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			entity.Name,
@@ -184,39 +242,39 @@ func makeCreate(entity *entity.Entity) *openapi3.Operation {
 				Required: true,
 			},
 		},
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("%screated", entity.Name)),
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
-							},
-						},
-					},
-				},
-			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
-		},
+		Responses: responses,
 	}
 }
 
 func makeUpdate(entity *entity.Entity) *openapi3.Operation {
+	responses := openapi3.NewResponses()
+	responses.Set("200", &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
+					},
+				},
+			},
+		},
+	})
+	responses.Set("400", &openapi3.ResponseRef{
+		Ref: "#/components/responses/400",
+	})
+	responses.Set("404", &openapi3.ResponseRef{
+		Ref: "#/components/responses/404",
+	})
+	responses.Set("409", &openapi3.ResponseRef{
+		Ref: "#/components/responses/409",
+	})
+	responses.Set("500", &openapi3.ResponseRef{
+		Ref: "#/components/responses/500",
+	})
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			entity.Name,
@@ -233,7 +291,7 @@ func makeUpdate(entity *entity.Entity) *openapi3.Operation {
 					Required:    true,
 					Schema: &openapi3.SchemaRef{
 						Value: &openapi3.Schema{
-							Type:   openapi3.TypeString,
+							Type:   &openapi3.Types{openapi3.TypeString},
 							Format: "uuid",
 						},
 					},
@@ -251,39 +309,48 @@ func makeUpdate(entity *entity.Entity) *openapi3.Operation {
 				Required: true,
 			},
 		},
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
+		Responses: responses,
+	}
+}
+
+func makeDelete(entity *entity.Entity) *openapi3.Operation {
+	responses := openapi3.NewResponses()
+	responses.Set("200", &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type: &openapi3.Types{openapi3.TypeObject},
+							Properties: openapi3.Schemas{
+								"status": &openapi3.SchemaRef{
+									Value: &openapi3.Schema{
+										Type: &openapi3.Types{openapi3.TypeString},
+									},
+								},
 							},
 						},
 					},
 				},
 			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
 		},
-	}
-}
-
-func makeDelete(entity *entity.Entity) *openapi3.Operation {
+	})
+	responses.Set("400", &openapi3.ResponseRef{
+		Ref: "#/components/responses/400",
+	})
+	responses.Set("404", &openapi3.ResponseRef{
+		Ref: "#/components/responses/404",
+	})
+	responses.Set("409", &openapi3.ResponseRef{
+		Ref: "#/components/responses/409",
+	})
+	responses.Set("500", &openapi3.ResponseRef{
+		Ref: "#/components/responses/500",
+	})
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			entity.Name,
@@ -300,51 +367,14 @@ func makeDelete(entity *entity.Entity) *openapi3.Operation {
 					Required:    true,
 					Schema: &openapi3.SchemaRef{
 						Value: &openapi3.Schema{
-							Type:   openapi3.TypeString,
+							Type:   &openapi3.Types{openapi3.TypeString},
 							Format: "uuid",
 						},
 					},
 				},
 			},
 		},
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Value: &openapi3.Schema{
-									Type: openapi3.TypeObject,
-									Properties: openapi3.Schemas{
-										"status": &openapi3.SchemaRef{
-											Value: &openapi3.Schema{
-												Type: openapi3.TypeString,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
-		},
+		Responses: responses,
 	}
 }
 
@@ -358,7 +388,7 @@ func makeGetOne(entity *entity.Entity) *openapi3.Operation {
 				Required:    true,
 				Schema: &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:   openapi3.TypeString,
+						Type:   &openapi3.Types{openapi3.TypeString},
 						Format: "uuid",
 					},
 				},
@@ -368,6 +398,34 @@ func makeGetOne(entity *entity.Entity) *openapi3.Operation {
 	if withParam := makeWithParam(entity.Edges); withParam != nil {
 		params = append(params, withParam)
 	}
+	responses := openapi3.NewResponses()
+	responses.Set("200", &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
+					},
+				},
+			},
+		},
+	})
+	responses.Set("400", &openapi3.ResponseRef{
+		Ref: "#/components/responses/400",
+	})
+	responses.Set("404", &openapi3.ResponseRef{
+		Ref: "#/components/responses/404",
+	})
+	responses.Set("409", &openapi3.ResponseRef{
+		Ref: "#/components/responses/409",
+	})
+	responses.Set("500", &openapi3.ResponseRef{
+		Ref: "#/components/responses/500",
+	})
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			entity.Name,
@@ -376,35 +434,7 @@ func makeGetOne(entity *entity.Entity) *openapi3.Operation {
 		Description: fmt.Sprintf("Finds the %s with the requested ID and returns it.", entity.Name),
 		OperationID: fmt.Sprintf("read%s", entity.Name),
 		Parameters:  params,
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("%supdated", entity.Name)),
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%s", entity.Name),
-							},
-						},
-					},
-				},
-			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
-		},
+		Responses:   responses,
 	}
 }
 
@@ -413,6 +443,49 @@ type getConfig struct {
 }
 
 func makeGet(cfg getConfig) *openapi3.Operation {
+	responses := openapi3.NewResponses()
+	responses.Set("200", &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			Description: lo.ToPtr(fmt.Sprintf("%supdated", cfg.name)),
+			Headers: openapi3.Headers{
+				"Content-Range": {
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							Required: true,
+							Schema: &openapi3.SchemaRef{
+								Value: &openapi3.Schema{
+									Type:        &openapi3.Types{openapi3.TypeInteger},
+									Description: "Total items count",
+								},
+							},
+						},
+					},
+				},
+			},
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s", cfg.name),
+					},
+				},
+			},
+		},
+	})
+	responses.Set("400", &openapi3.ResponseRef{
+		Ref: "#/components/responses/400",
+	})
+	responses.Set("404", &openapi3.ResponseRef{
+		Ref: "#/components/responses/404",
+	})
+	responses.Set("409", &openapi3.ResponseRef{
+		Ref: "#/components/responses/409",
+	})
+	responses.Set("500", &openapi3.ResponseRef{
+		Ref: "#/components/responses/500",
+	})
+	responses.Set("default", &openapi3.ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
 	return &openapi3.Operation{
 		Tags: []string{
 			cfg.name,
@@ -420,49 +493,6 @@ func makeGet(cfg getConfig) *openapi3.Operation {
 		Summary:     fmt.Sprintf("Get %s", cfg.name),
 		Description: fmt.Sprintf("Get %s.", cfg.name),
 		OperationID: fmt.Sprintf("%s", cfg.name),
-		Responses: openapi3.Responses{
-			"200": &openapi3.ResponseRef{
-				Value: &openapi3.Response{
-					Description: lo.ToPtr(fmt.Sprintf("%supdated", cfg.name)),
-					Headers: openapi3.Headers{
-						"Content-Range": {
-							Value: &openapi3.Header{
-								Parameter: openapi3.Parameter{
-									Required: true,
-									Schema: &openapi3.SchemaRef{
-										Value: &openapi3.Schema{
-											Type:        openapi3.TypeInteger,
-											Description: "Total items count",
-										},
-									},
-								},
-							},
-						},
-					},
-					Content: openapi3.Content{
-						"application/json": &openapi3.MediaType{
-							Schema: &openapi3.SchemaRef{
-								Ref: fmt.Sprintf("#/components/schemas/%s", cfg.name),
-							},
-						},
-					},
-				},
-			},
-			"400": &openapi3.ResponseRef{
-				Ref: "#/components/responses/400",
-			},
-			"404": &openapi3.ResponseRef{
-				Ref: "#/components/responses/404",
-			},
-			"409": &openapi3.ResponseRef{
-				Ref: "#/components/responses/409",
-			},
-			"500": &openapi3.ResponseRef{
-				Ref: "#/components/responses/500",
-			},
-			"default": &openapi3.ResponseRef{
-				Ref: "#/components/responses/Error",
-			},
-		},
+		Responses:   responses,
 	}
 }

@@ -11,9 +11,10 @@ import (
 {{ $entPath := .EntPath }}
 {{- if gt (len .Entities) 0 }}
     "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}/gen"
 {{- end }}
 {{- range $i, $e := .Entities }}
-    "{{ $pkg }}/{{ $root.RootPkg }}{{ $entPath }}/{{ lower .Name }}"
+    "{{ $pkg }}/{{ $root.RootPkg }}{{ $entPath }}/gen/{{ lower .Name }}"
     "github.com/google/uuid"
 {{- end }}
     "go.uber.org/zap"
@@ -43,8 +44,16 @@ import (
     {{- range .Entity.Fields }}
         {{- if  and (needFilter $root .) (not .Edge) }}
             if params.Filter{{ pascal .Name }}.IsSet() {
-            {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
+                {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
             }
+            {{- if .Type.Type.CanRange }}
+            if params.FilterRangeFrom{{ pascal .Name }}.IsSet() {
+                {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}GT(params.FilterRangeFrom{{ pascal .Name}}.Get()))
+            }
+            if params.FilterRangeTo{{ pascal .Name }}.IsSet() {
+                {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}LT(params.FilterRangeTo{{ pascal .Name}}.Get()))
+            }
+            {{- end }}
         {{- end }}
     {{- end }}
 {{- end }}
@@ -73,9 +82,59 @@ logger: logger,
 }
 }
 
+{{- define "writeManyEdge" }}
+{{- $edge := . }}
+    if len(req.Edges.{{ pascal .Name }}) > 0 {
+        edgs := make([]*gen.{{ .EntityName }}Create, 0, len(req.Edges.{{ pascal .Name }}))
+        for i := range req.Edges.{{ pascal .Name }} {
+            eCQ := tx.{{ pascal .EntityName }}.
+                Create()
+            {{- range .Entity.Fields }}
+                {{- if and (not .Immutable) (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) }}
+                {{- if not .Required }}
+                    if req.Edges.{{ pascal .Name }}[i].{{ pascal .Name }}.IsSet() {
+                {{- end }}
+                    eCQ.Set{{ pascal .Name }}({{ setEdgeReqFormat $edge . }})
+                {{- if not .Required }}
+                    }
+                {{- end }}
+                {{- end }}
+            {{- end }}
+            edgs = append(edgs, eCQ)
+                
+        }
+        cb := tx.ProductPicture.CreateBulk(edgs...)
+        edge{{ pascal .Name }} , err = cb.Save(ctx)
+        if err != nil {
+            return errors.Errorf("cb.Save %v", err)
+        }
+        e.Edges.{{ pascal .Name }} = edge{{ pascal .Name }}
+    }
+{{- end }}
+
+{{- define "writeManyQueryEdge" }}
+
+{{- end }}
+
+{{- define "updateManyEdge" }}
+{{- end }}
+
 {{ range $i, $e := .Entities }}
-        func (h *Service) Create{{ .Name }}(ctx context.Context, req Create{{ .Name }}) ({{ .Name }}, error) {
-        b := h.client.{{ .Name }}.Create()
+    func (h *Service) Create{{ .Name }}(ctx context.Context, req Create{{ .Name }}) ({{ .Name }}, error) {
+        var (
+            e *gen.{{ pascal .Name }}
+            {{ if $e.HasCreateEdges }}
+            {{- range $e.Edges }}
+                {{- if .WithCreate }}
+                {{- if .ToMany }}
+                edge{{ pascal .Name }} []*gen.{{ .EntityName }}
+                {{- end }}
+                {{- end }}
+            {{- end }}
+        {{- end }}
+        )
+        err := ent.WithTx(ctx, h.client, func(tx *gen.Tx) error {
+        b := tx.{{ .Name }}.Create()
 
         // Add all fields.
         {{- range $i, $f := .Fields }}
@@ -96,35 +155,33 @@ logger: logger,
                 b.Set{{ pascal .Name }}ID(req.{{ pascal .FieldName }})
             {{ end }}
         {{- end }}
+        var err error
         // Persist to storage.
-        e, err := b.Save(ctx)
+        e, err = b.Save(ctx)
         if err != nil {
-        return {{ .Name }}{}, err
+        return err
         }
 
         {{ if $e.HasCreateEdges }}
-            edges, hasEdges := req.Edges.Get()
-            if hasEdges {
-            {{- template "writeManyEdge" $e }}
-            }
+            {{- range $e.Edges }}
+                {{- if .WithCreate }}
+                {{- if .ToMany }}
+                {{- template "writeManyEdge" . }}
+                {{- end }}
+                {{- end }}
+            {{- end }}
         {{- end }}
 
-        // Reload the entity to attach all eager-loaded edges.
-        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.ID(e.ID))
-        {{ if $e.HasCreateEdges }}
-            if hasEdges {
-            {{- template "writeManyQueryEdge" $e }}
-            }
-        {{- end }}
-        e, err = q.Only(ctx)
+        return nil
+        })
         if err != nil {
-        // This should never happen.
-        return {{ .Name }}{}, err
+            return {{ pascal .Name }}{}, errors.Errorf("ent.WithTx %v", err)
         }
         response := New{{ .Name }}(e)
         return response, nil
-        }
-        func (h *Service) Update{{ .Name }}(ctx context.Context, id uuid.UUID, req Update{{ .Name }}) ({{ .Name }}, error) {
+    }
+
+    func (h *Service) Update{{ .Name }}(ctx context.Context, id uuid.UUID, req Update{{ .Name }}) ({{ .Name }}, error) {
         b := h.client.{{ .Name }}.UpdateOneID(id)
 
         // Add all fields.
@@ -151,10 +208,7 @@ logger: logger,
         }
 
         {{ if $e.HasUpdateEdges }}
-            edges, hasEdges := req.Edges.Get()
-            if hasEdges {
             {{- template "updateManyEdge" $e }}
-            }
         {{- end }}
 
         // Reload the entity to attach all eager-loaded edges.
@@ -166,9 +220,10 @@ logger: logger,
         }
         response := New{{ .Name }}(e)
         return response, nil
-        }
-        // Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
-        func (h *Service) Delete{{ .Name }}(ctx context.Context, id uuid.UUID) error {
+    }
+
+    // Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
+    func (h *Service) Delete{{ .Name }}(ctx context.Context, id uuid.UUID) error {
         err := h.client.{{ .Name }}.DeleteOneID(id).Exec(ctx)
         if err != nil {
         switch {
@@ -182,7 +237,8 @@ logger: logger,
         }
         }
         return nil
-        }
+    }
+
     func (h *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
         {{ template "listQuery" dict "Entity" $e "QueryVar" "q" "Root" $root "WithModifier" true }}
         {{ template "queryEdges" . }}

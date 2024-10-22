@@ -9,16 +9,17 @@ import (
 {{ $root := . }}
 {{ range $i, $e := .Entities }}
 
-{{ if or (needReadOneOp $root .) (needReadManyOp $root .) (needUpdateOp $root .) (needCreateOp $root .) }}
+{{ if needEntity $root . }}
   func New{{ .Name }}(e service.{{ .Name }}) {{ .Name }} {
     var ret {{ .Name }}
     {{- range $i, $f := .Fields }}
       {{- if isFieldPublic $root $f }}
-      ret.{{ pascal .Name }}{{ if .Required }} = {{ else }}.SetTo({{ end }}{{ if isEnum . }}{{ $e.Name }}{{ pascal $f.Name }}({{ end }}e.{{ pascal $f.Name }}{{ if isEnum . }}){{ end }}{{ if not .Required }}.Get()){{ end }}
+      ret.{{ pascal .Name }}{{ if not .Optional }} = {{ else }}.SetTo({{ end }}{{ if isEnum . }}{{ $e.Name }}{{ pascal $f.Name }}({{ end }}e.{{ pascal $f.Name }}{{ if isEnum . }}){{ end }}{{ if .Optional }}.Get()){{ end }}
       {{- end }}
     {{- end }}
 
   {{- range .Edges }}
+  {{- if .WithCreate }}
     if {{ if .ToOne }}e.Edges.{{ pascal .Name }}.IsSet(){{ else }}e.Edges.{{ pascal .Name }} != nil{{ end }} {
     ret.Edges.{{ pascal .Name }}{{- if .ToOne }}.SetTo(New{{ .EntityName }}(e.Edges.{{ pascal .Name }}.Get())){{ else }} = make([]{{ .EntityName }}, 0, len(e.Edges.{{ pascal .Name }})){{ end }}
     {{- if not .ToOne }}
@@ -27,6 +28,7 @@ import (
       }
     {{- end }}
     }
+  {{- end }}
   {{- end }}
 
     return ret

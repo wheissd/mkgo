@@ -3,7 +3,7 @@ package service
 {{- $pkg := .Pkg }}
 import (
 {{- if gt (len .Entities) 0 }}
-    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}"
+    "{{ $pkg }}/{{ .RootPkg }}{{ .EntPath }}/gen"
 {{- end }}
 )
 
