@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}api/ogen"
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}api/service"
+	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}rest_client/ogen"
+	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}rest_client/service"
 	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}config"
 	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}ent/gen"
 	"go.uber.org/zap"

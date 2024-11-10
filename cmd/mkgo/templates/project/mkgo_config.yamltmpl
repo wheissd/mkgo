@@ -1,6 +1,6 @@
 apis:
     - grpc:
-        OutputPath: {{ if not .InternalMode }}internal/{{ end }}api
+        OutputPath: grpc_admin
         ProtoPath: proto
         Mode: grpc_admin
         Transport: grpc
@@ -27,8 +27,8 @@ apis:
         # enable edges write by default, set edge annotations to hide
         EnableEdgeWriteByDefault: true
     - rest-client:
-        OutputPath: {{ if not .InternalMode }}internal/{{ end }}api
-        OpenApiPath: openapi/api.json
+        OutputPath: rest_client
+        OpenApiPath: openapi/rest_client.json
         Mode: rest_client
         Title: Your API title
         Servers:

@@ -62,6 +62,9 @@ func (cmd *cmd) initProject(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
+	cmd.runCmd("go get entgo.io/ent")
+
 	return cmd.runCmd("go get entgo.io/ent/entc")
 }
 
@@ -72,17 +75,27 @@ var basicDirs = []string{
 	"internal",
 	"internal/app",
 	"internal/db",
-	"internal/api",
-	"internal/api/ogen",
-	"internal/api/grpc",
-	"internal/api/service",
-	"internal/api/cmd",
-	"internal/api/cmd/apigen",
-	"internal/api/http",
-	"internal/api/http/handler",
+	"internal/rest_client",
+	"internal/grpc_admin",
+	"internal/rest_client/ogen",
+	"internal/rest_client/grpc",
+	"internal/rest_client/service",
+	"internal/rest_client/cmd",
+	"internal/rest_client/cmd/apigen",
+	"internal/rest_client/http",
+	"internal/rest_client/http/handler",
+	"internal/grpc_admin/ogen",
+	"internal/grpc_admin/grpc",
+	"internal/grpc_admin/service",
+	"internal/grpc_admin/cmd",
+	"internal/grpc_admin/cmd/apigen",
+	"internal/grpc_admin/http",
+	"internal/grpc_admin/http/handler",
 	"internal/ent",
 	"internal/ent/schema",
 	"internal/ent/schema/template",
+	"internal/ent/migrate",
+	"internal/ent/migrate/migrations",
 	"internal/ent/cmd",
 	"internal/config",
 	"openapi",

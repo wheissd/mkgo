@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}/ent/gen"
+	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal{{ end }}/ent/gen"
 )
 
 func WithTx(ctx context.Context, client *gen.Client, fn func(tx *gen.Tx) error) error {

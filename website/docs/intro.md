@@ -14,11 +14,27 @@ auto-generate crud operations with openapi schema.
 1) generate
 1) enjoy
 
+## Prerequisites
+
+mkgo has dependencies:
+atlas, ent, ogen, goimports
+
+```console
+curl -sSf https://atlasgo.sh | ATLAS_VERSION=v0.19.3-cfa638c-canary sh
+go install golang.org/x/tools/cmd/goimports@latest
+``` 
+
 ## Installation
 
 ```console
-go install github.com/wheissd/gomk
+go install github.com/wheissd/gomk/cmd/
 ```
+
+:::tip TIP
+
+Ensure your PATH contains go bin dir
+
+:::
 
 ## Initialize project
 

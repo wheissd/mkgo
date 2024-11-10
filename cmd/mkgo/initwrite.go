@@ -16,13 +16,18 @@ type templateConfig struct {
 }
 
 var (
-	//go:embed templates/project/internal/api/cmd/apigen/*.gotmpl
-	//go:embed templates/project/internal/api/http/*.gotmpl
-	//go:embed templates/project/internal/api/grpc/*.gotmpl
-	//go:embed templates/project/internal/api/http/handler/*.gotmpl
+	//go:embed templates/project/internal/rest_client/cmd/apigen/*.gotmpl
+	//go:embed templates/project/internal/rest_client/http/*.gotmpl
+	//go:embed templates/project/internal/rest_client/grpc/*.gotmpl
+	//go:embed templates/project/internal/rest_client/http/handler/*.gotmpl
+	//go:embed templates/project/internal/grpc_admin/cmd/apigen/*.gotmpl
+	//go:embed templates/project/internal/grpc_admin/http/*.gotmpl
+	//go:embed templates/project/internal/grpc_admin/grpc/*.gotmpl
+	//go:embed templates/project/internal/grpc_admin/http/handler/*.gotmpl
 	//go:embed templates/project/internal/app/*.gotmpl
 	//go:embed templates/project/internal/config/*tmpl
 	//go:embed templates/project/internal/db/*tmpl
+	//go:embed templates/project/internal/ent/*.gotmpl
 	//go:embed templates/project/internal/ent/cmd/*.gotmpl
 	//go:embed templates/project/internal/ent/schema/*.gotmpl
 	//go:embed templates/project/*tmpl
@@ -74,22 +79,40 @@ func writeGoFiles(sch Schema) error {
 			file: "internal/db/db.gotmpl",
 		},
 		{
-			file: "internal/api/cmd/apigen/main.gotmpl",
+			file: "internal/grpc_admin/cmd/apigen/main.gotmpl",
 		},
 		{
-			file: "internal/api/cmd/apigen/pre_gen.gotmpl",
+			file: "internal/grpc_admin/cmd/apigen/pre_gen.gotmpl",
 		},
 		{
-			file: "internal/api/http/server.gotmpl",
+			file: "internal/grpc_admin/http/server.gotmpl",
 		},
 		{
-			file: "internal/api/grpc/module.gotmpl",
+			file: "internal/grpc_admin/grpc/module.gotmpl",
 		},
 		{
-			file: "internal/api/http/handler/handler.gotmpl",
+			file: "internal/grpc_admin/http/handler/handler.gotmpl",
+		},
+		{
+			file: "internal/rest_client/cmd/apigen/main.gotmpl",
+		},
+		{
+			file: "internal/rest_client/cmd/apigen/pre_gen.gotmpl",
+		},
+		{
+			file: "internal/rest_client/http/server.gotmpl",
+		},
+		{
+			file: "internal/rest_client/grpc/module.gotmpl",
+		},
+		{
+			file: "internal/rest_client/http/handler/handler.gotmpl",
 		},
 		{
 			file: "internal/ent/cmd/main.gotmpl",
+		},
+		{
+			file: "internal/ent/withtx.gotmpl",
 		},
 		{
 			file: "internal/ent/schema/default_model.gotmpl",

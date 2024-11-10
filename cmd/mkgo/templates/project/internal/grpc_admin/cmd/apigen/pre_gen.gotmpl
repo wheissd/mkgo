@@ -1,0 +1,14 @@
+package main
+
+import (
+	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal{{ end }}/ent/gen"
+	. "{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal{{ end }}/ent/schema"
+	"github.com/wheissd/mkgo/lib"
+)
+
+var entities = []lib.PreEntity{
+	{
+		Schema: DefaultModel{},
+		Model:  gen.DefaultModel{},
+	},
+}
