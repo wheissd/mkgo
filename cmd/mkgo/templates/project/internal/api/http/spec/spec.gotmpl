@@ -1,0 +1,55 @@
+package spec
+
+import (
+	"net/http"
+
+	. "github.com/getkin/kin-openapi/openapi3"
+	"github.com/samber/lo"
+)
+
+func Spec(spec *T) error {
+	spec.Components.Schemas["VersionResponse"] = &SchemaRef{
+		Value: &Schema{
+			Type: &Types{TypeObject},
+			Properties: Schemas{
+				"major": NewIntegerSchema().NewRef(),
+				"minor": NewIntegerSchema().NewRef(),
+				"patch": NewIntegerSchema().NewRef(),
+			},
+			Required: []string{"major", "minor", "patch"},
+		},
+	}
+	getVersionResponses := NewResponses(
+		WithStatus(http.StatusOK, &ResponseRef{
+			Value: &Response{
+				Description: lo.ToPtr("Get version"),
+				Content: Content{
+					"application/json": &MediaType{
+						Schema: &SchemaRef{
+							Ref: "#/components/schemas/VersionResponse",
+						},
+					},
+				},
+			},
+		}),
+	)
+	getVersionResponses.Set("default", &ResponseRef{
+		Ref: "#/components/responses/Error",
+	})
+	spec.Paths = NewPaths(
+		WithPath(
+			"/version",
+			&PathItem{
+				Description: "Get version",
+				Get: &Operation{
+					OperationID: "getVersion",
+					Summary:     "Get version",
+					Tags:        []string{"version"},
+					Responses:   getVersionResponses,
+				},
+			},
+		),
+	)
+
+	return nil
+}

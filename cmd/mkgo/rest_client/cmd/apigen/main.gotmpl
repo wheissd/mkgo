@@ -1,0 +1,12 @@
+package main
+
+import (
+	"{{ .Tool.Module }}/gen"
+	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal{{ end }}/rest_client/http/spec"
+	"github.com/wheissd/mkgo/options"
+)
+
+
+func main() {
+	gen.Gen(entities, options.OpenapiSchema(spec.Spec))
+}

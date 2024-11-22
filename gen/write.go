@@ -7,6 +7,8 @@ import (
 	"go/format"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -14,18 +16,32 @@ import (
 	"go.uber.org/zap"
 )
 
+type writeContext struct {
+	path string
+}
+
+type whenWrite func(ctx writeContext) bool
+
 type templateConfig struct {
 	file       string
 	withFiles  []string
 	template   *template.Template
 	outputFile string
 	transport  string
+	when       whenWrite
+}
+
+func whenPathNotExist(ctx writeContext) bool {
+	_, err := os.Stat(ctx.path)
+	return err == nil
 }
 
 var (
 	//go:embed templates/service/*.gotmpl
 	//go:embed templates/ogen/*.gotmpl
 	//go:embed templates/grpc/*.gotmpl
+	//go:embed templates/http/*.gotmpl
+	//go:embed templates/http/handler/*.gotmpl
 	tmpl embed.FS
 )
 
@@ -70,6 +86,16 @@ func writeGoFiles(logger *zap.Logger, sch *entity.Schema) {
 			file:      "grpc/module.gotmpl",
 			transport: TransportGRPC,
 		},
+		{
+			file:      "http/server.gotmpl",
+			when:      whenPathNotExist,
+			transport: TransportHTTP,
+		},
+		{
+			file:      "http/handler/handler.gotmpl",
+			when:      whenPathNotExist,
+			transport: TransportHTTP,
+		},
 	}
 	_, err := os.ReadDir("internal")
 	var (
@@ -113,6 +139,13 @@ func writeGoFiles(logger *zap.Logger, sch *entity.Schema) {
 			outputFile = sch.Cfg.OutputPath + "/" + oPath
 		}
 
+		if cfgItem.when != nil && cfgItem.when(writeContext{
+			path: outputFile,
+		}) {
+			logger.Warn(fmt.Sprintf("skip writing file. reason: %s", reflect.TypeOf(cfgItem.outputFile).Name()))
+			continue
+		}
+
 		buf := bytes.NewBuffer(nil)
 
 		err = cfgItem.template.Execute(buf, sch)
@@ -129,6 +162,13 @@ func writeGoFiles(logger *zap.Logger, sch *entity.Schema) {
 
 		//_ = os.Remove(cfgItem.outputFile)
 
+		err = createMissingDirs(outputFile)
+		if err != nil {
+			panic(err)
+		} else {
+			logger.Debug(fmt.Sprintf("createMissingDirs: %s", outputFile))
+		}
+
 		logger.Debug("writing file: " + outputFile)
 		err = os.WriteFile(outputFile, b, 0744)
 		if err != nil {
@@ -142,6 +182,19 @@ func writeGoFiles(logger *zap.Logger, sch *entity.Schema) {
 	}
 
 	runCmd("goimports -l -w " + importsPath)
+}
+
+// createMissingDirs creates only missing directories from the given file path.
+func createMissingDirs(filePath string) error {
+	// Get the directory part of the file path
+	dir := filepath.Dir(filePath)
+
+	// Create the directories with necessary permissions (0755 by default)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directories for path %s: %w", filePath, err)
+	}
+
+	return nil
 }
 
 func runCmd(cmdStr string) error {

@@ -117,7 +117,6 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 		cfg.Parse(*cfgPath)
 	}
 	logger.Info("start apigen", zap.Any("cfg", cfg))
-
 	*entPath = strings.TrimPrefix(*entPath, "/")
 
 	for _, apiCfg := range cfg.APIs {

@@ -99,7 +99,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 				zap.String("schemaPath", schemaPath),
 				zap.String("genPath", genPath),
 			)
-			err = cmd.pre(preOutput, schemaPath, genPath)
+			err = cmd.pre(preOutput, schemaPath, genPath, rootDir, cfgItem)
 			if err != nil {
 				return err
 			}
@@ -131,19 +131,13 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	cmd.logger.Debug("genConfig", zap.String("target", cfgDir))
 	cmd.genConfig(cfgDir)
 
-	var apiCfg config.GenConfigItem
-	for i := range cfg.APIs {
-		apiCfg = cfg.APIs[i]
-		break
-	}
-
-	apigenPath := fmt.Sprintf("%s/%s%s%s/cmd/apigen", pkgInfo.Pkg, rootDir, apigenDelim, apiCfg.OutputPath)
-	err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent")
-	if err != nil {
-		return err
-	}
-
 	for _, apiCfg := range cfg.APIs {
+		apigenPath := fmt.Sprintf("%s/%s%s%s/cmd/apigen", pkgInfo.Pkg, rootDir, apigenDelim, apiCfg.OutputPath)
+		err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent")
+		if err != nil {
+			return err
+		}
+
 		if apiCfg.Transport == gen.TransportHTTP || apiCfg.Transport == gen.TransportDefault {
 			ogenTarget := rootDir + apigenDelim + apiCfg.OutputPath + "/ogen"
 			//if !internalMode {
