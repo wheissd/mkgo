@@ -16,12 +16,6 @@ type templateConfig struct {
 }
 
 var (
-	////go:embed templates/project/internal/rest_client/cmd/apigen/*.gotmpl
-	////go:embed templates/project/internal/rest_client/http/*.gotmpl
-	////go:embed templates/project/internal/rest_client/grpc/*.gotmpl
-	////go:embed templates/project/internal/rest_client/http/handler/*.gotmpl
-	////go:embed templates/project/internal/grpc_admin/cmd/apigen/*.gotmpl
-	////go:embed templates/project/internal/grpc_admin/grpc/*.gotmpl
 	//go:embed templates/project/internal/app/*.gotmpl
 	//go:embed templates/project/internal/config/*tmpl
 	//go:embed templates/project/internal/db/*tmpl
@@ -29,8 +23,6 @@ var (
 	//go:embed templates/project/internal/ent/cmd/*.gotmpl
 	//go:embed templates/project/internal/ent/schema/*.gotmpl
 	//go:embed templates/project/*tmpl
-	////go:embed templates/project/cmd/restclient/*tmpl
-	////go:embed templates/project/cmd/grpcadmin/*tmpl
 	//go:embed templates/project/mkgo/*tmpl
 	tmpl embed.FS
 )

@@ -27,7 +27,7 @@ go install golang.org/x/tools/cmd/goimports@latest
 ## Installation
 
 ```console
-go install github.com/wheissd/mkgo/cmd/mkgo
+go install github.com/wheissd/gomk/cmd/mkgo@latest
 ```
 
 :::tip TIP
