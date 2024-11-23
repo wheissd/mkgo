@@ -80,6 +80,7 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 	entPath := flag.String("ent_path", "internal/ent/gen", "ent gen directory path")
 	cfgPath := flag.String("cfg_path", "mkgo_config.yaml", "api gen config path")
 	cfgRaw := flag.String("cfg", "{}", "api gen config in json format")
+	cfgMode := flag.String("mode", "default", "api gen mode, specified in mkgo_config")
 	flag.Parse()
 
 	pe := zap.NewDevelopmentEncoderConfig()
@@ -120,6 +121,9 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 	*entPath = strings.TrimPrefix(*entPath, "/")
 
 	for _, apiCfg := range cfg.APIs {
+		if apiCfg.Mode != *cfgMode {
+			continue
+		}
 		sch := makeSchema(logger, apiCfg, entPath)
 
 		entadapter.Parse(entities, sch, apiCfg.Mode)

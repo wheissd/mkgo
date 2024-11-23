@@ -133,7 +133,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 
 	for _, apiCfg := range cfg.APIs {
 		apigenPath := fmt.Sprintf("%s/%s%s%s/cmd/apigen", pkgInfo.Pkg, rootDir, apigenDelim, apiCfg.OutputPath)
-		err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent")
+		err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent" + " -mode=" + apiCfg.Mode)
 		if err != nil {
 			return err
 		}
