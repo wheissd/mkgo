@@ -70,7 +70,7 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 		{{- range .Fields }}
 			{{- if and (not .AutoUpdate) (not .Phantom) (not (techField .)) (not (eq .Name "id")) (not .Required) }}
 			if v, ok := req.{{ pascal .Name }}.Get(); ok {
-			sReq.{{ pascal .Name }}.Set(v)
+			sReq.{{ pascal .Name }}.Set({{ if isEnum . }}string({{ end }}v{{ if isEnum . }}){{ end }})
 			}
 			{{- end }}
 		{{- end }}
