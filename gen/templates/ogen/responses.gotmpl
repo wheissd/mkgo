@@ -19,7 +19,7 @@ import (
     {{- end }}
 
   {{- range .Edges }}
-  {{- if .WithCreate }}
+  {{- if or .WithCreate .WithRead }}
     if {{ if .ToOne }}e.Edges.{{ pascal .Name }}.IsSet(){{ else }}e.Edges.{{ pascal .Name }} != nil{{ end }} {
     ret.Edges.{{ pascal .Name }}{{- if .ToOne }}.SetTo(New{{ .EntityName }}(e.Edges.{{ pascal .Name }}.Get())){{ else }} = make([]{{ .EntityName }}, 0, len(e.Edges.{{ pascal .Name }})){{ end }}
     {{- if not .ToOne }}

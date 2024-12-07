@@ -188,7 +188,30 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 	{{- end }}
 	{{ if needReadOneOp $root . }}
 	func (h *HandlerImpl) Read{{ .Name }}(ctx context.Context, params Read{{ .Name }}Params) (Read{{ .Name }}Res, error) {
-			e, err := h.service.Read{{ .Name }}(ctx, service.{{ .Name }}ReadParams{ID: params.ID})
+		sParams := service.{{ .Name }}ReadParams{ID: params.ID}
+		{{ if .HasReadEdges }}
+			var (
+				err error
+			)
+			if params.With.IsSet() {
+				topLevelEdges := strings.Split(params.With.Value, ",")
+				for i := range topLevelEdges {
+					if sParams.With == nil {
+						sParams.With = &service.{{ .Name }}QueryEdges{}
+					}
+					switch topLevelEdges[i] {
+					{{- range .Edges }}
+						case "{{ .Name }}":
+						sParams.With.{{ pascal .Name }}, err = parseWith{{ .EntityName }}(0, topLevelEdges[i], nil)
+						if err != nil {
+						return nil, err
+						}
+					{{- end }}
+					}
+				}
+			}
+		{{- end }}
+			e, err := h.service.Read{{ .Name }}(ctx, sParams)
 			if err != nil {
 				return nil, err
 			}

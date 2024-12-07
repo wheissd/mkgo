@@ -37,7 +37,7 @@ func parseWith{{ $entity.Name }}(level int, query string, e *service.{{ pascal $
     {{- end }}
     }
 
-    if !found && query == "" {
+    if !found && queryRemainder == "" {
         return e, nil
     }
     return nil, errors.New("invalid with param")
