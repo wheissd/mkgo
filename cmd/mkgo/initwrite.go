@@ -28,14 +28,14 @@ var (
 )
 
 type Tool struct {
-	// full tool module path
+	// full tool module Path
 	Module string
 }
 
 type Schema struct {
-	// module path
+	// module Path
 	Path string
-	// project path
+	// project Path
 	ProjectPath string
 	// module from root go.mod
 	Module string

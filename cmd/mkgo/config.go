@@ -3,14 +3,18 @@ package main
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
 	"html/template"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 )
 
@@ -24,9 +28,14 @@ type constructor struct {
 	Type string
 }
 
+type importData struct {
+	Path string
+	As   *string
+}
+
 type genData struct {
 	Constructors []constructor
-	Imports      []string
+	Imports      []importData
 	Path         string
 }
 
@@ -66,7 +75,12 @@ func (cmd *cmd) genConfig(target string) {
 						for _, spec := range gDecl.Specs {
 							if importSpec, ok := spec.(*ast.ImportSpec); ok {
 								cmd.logger.Debug("decl", zap.Any("importSpec", spec))
-								gData.Imports = append(gData.Imports, strings.Trim(importSpec.Path.Value, "\""))
+								imp := importSpec.Path.Value
+								imD := importData{Path: strings.Trim(imp, "\"")}
+								if importSpec.Name != nil {
+									imD.As = lo.ToPtr(importSpec.Name.String())
+								}
+								gData.Imports = append(gData.Imports, imD)
 							}
 						}
 					case token.TYPE:
@@ -131,5 +145,64 @@ func (cmd *cmd) genConfig(target string) {
 	if err != nil {
 		panic(err)
 	}
-	cmd.runCmd("goimports -l -w " + outputPath)
+	cmd.runVCmd("goimports -l -w " + outputPath)
+}
+
+//func (cmd *cmd) getCorrectImportData(gData genData, imD importData) importData {
+//	if _, found := lo.Find(gData.Imports, func(i importData) bool {
+//		foundPath := i.Path
+//		if i.As != nil {
+//			foundPath = *i.As
+//		}
+//		foundSplitted := strings.Split(foundPath, "/")
+//		foundPath = foundSplitted[len(foundSplitted)-1]
+//		imDPath := imD.Path
+//		if imD.As != nil {
+//			imDPath = *imD.As
+//		}
+//		imDPathSplitted := strings.Split(imDPath, "/")
+//		s := imDPathSplitted[len(imDPathSplitted)-1]
+//		cmd.logger.Debug("getCorrectImportData", zap.String("s", s), zap.String("foundPath", foundPath))
+//		return s == foundPath
+//	}); found {
+//		s := imD.Path
+//		if imD.As != nil {
+//			s = *imD.As
+//		}
+//		next := generateNextNumericSuffix(s)
+//		return cmd.getCorrectImportData(gData, importData{Path: imD.Path, As: &next})
+//	}
+//	return importData{
+//		Path: imD.Path,
+//		As:   imD.As,
+//	}
+//}
+
+var strNumericTailRegexp = regexp.MustCompile(`(.*?)(\d+)$`)
+
+func generateNextNumericSuffix(input string) string {
+	parts := strings.Split(input, "/")
+	lastPart := parts[len(parts)-1]
+	matches := strNumericTailRegexp.FindStringSubmatch(lastPart)
+
+	if len(matches) < 3 {
+		// No numeric tail found, return input with "1" appended
+		return lastPart + "1"
+	}
+
+	// Extract the prefix and numeric tail
+	prefix := matches[1]
+	numberStr := matches[2]
+
+	// Parse the numeric tail
+	number, _ := strconv.Atoi(numberStr)
+
+	// Increment the number
+	number++
+
+	// Format the new string with the same number of digits
+	newNumberStr := fmt.Sprintf("%0*d", len(numberStr), number)
+
+	// Return the new string
+	return prefix + newNumberStr
 }

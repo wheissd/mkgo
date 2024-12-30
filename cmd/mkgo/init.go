@@ -29,7 +29,7 @@ func (cmd *cmd) initProject(ctx *cli.Context) error {
 	mod := parse.GetMod(path)
 	cmd.logger.Debug(
 		"start mkgo init",
-		zap.String("path", path),
+		zap.String("Path", path),
 		zap.String("mod", mod),
 	)
 	pathContainsInternal := strings.Contains(path, "internal")
@@ -63,9 +63,11 @@ func (cmd *cmd) initProject(ctx *cli.Context) error {
 		return err
 	}
 
-	cmd.runCmd("go get entgo.io/ent")
+	cmd.runVCmd("go get entgo.io/ent")
 
-	return cmd.runCmd("go get entgo.io/ent/entc")
+	cmd.runVCmd("go install github.com/ogen-go/ogen/cmd/ogen@latest")
+
+	return cmd.runVCmd("go get entgo.io/ent/entc")
 }
 
 var basicDirs = []string{

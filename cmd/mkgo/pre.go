@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"io/fs"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"text/template"
@@ -58,107 +59,69 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 	schemaImport := module + "/" + schemaPath
 	genImport := module + "/" + genPath
 
-	// @TODO remove duplicate code
-	mainTemplate, err := template.ParseFS(preTmpl, "templates/pre_main.gotmpl")
-	if err != nil {
-		panic(err)
+	ts := []struct {
+		template string
+		path     string
+		name     string
+	}{
+		{
+			template: "templates/pre_main.gotmpl",
+			path:     output + "/main.go",
+			name:     "apigen main",
+		},
+		{
+			template: "templates/project/internal/api/http/spec/spec.gotmpl",
+			path:     fmt.Sprintf("%s/%s/http/spec/%s", rootDir, cfg.OutputPath, "/spec.go"),
+			name:     "http spec",
+		},
+		{
+			template: "templates/project/internal/api/http/handler/handler.gotmpl",
+			path:     fmt.Sprintf("%s/%s/http/handler/%s", rootDir, cfg.OutputPath, "/handler.go"),
+			name:     "http handler",
+		},
 	}
 
-	mainSchema := PreMainSchema{
+	schema := PreMainSchema{
 		Module:    module,
 		Cfg:       cfg,
 		IsGRPC:    cfg.ProtoPath != "",
 		IsOpenAPI: cfg.OpenApiPath != "",
 		RootDir:   rootDir,
 	}
-	if _, err = os.Stat(output + "/main.go"); err != nil {
-		cmd.logger.Debug("empty apigen main, add " + output + "/main.go")
-		buf := bytes.NewBuffer(nil)
-		if err = mainTemplate.Execute(buf, mainSchema); err != nil {
-			panic(err)
-		}
 
-		b, err := format.Source(buf.Bytes())
-		if err != nil {
-			cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
-
-			return err
-		}
-
-		err = os.WriteFile(output+"/main.go", b, 0744)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-	}
-
-	// @TODO remove duplicate code
-	specTemplate, err := template.ParseFS(preTmpl, "templates/project/internal/api/http/spec/spec.gotmpl")
-	if err != nil {
-		panic(err)
-	}
-
-	specDirPath := fmt.Sprintf("%s/%s/http/spec", rootDir, cfg.OutputPath)
-	specPath := fmt.Sprintf("%s/%s", specDirPath, "/spec.go")
-	if _, err = os.Stat(specPath); cfg.OpenApiPath != "" && err != nil {
-		cmd.logger.Debug("empty spec, add " + specPath)
-		buf := bytes.NewBuffer(nil)
-		if err = specTemplate.Execute(buf, nil); err != nil {
-			panic(err)
-		}
-
-		b, err := format.Source(buf.Bytes())
-		if err != nil {
-			cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
-
-			return err
-		}
-
-		// Create the directories if they don't exist
-		err = os.MkdirAll(specDirPath, os.ModePerm)
+	for _, t := range ts {
+		tmpl, err := template.ParseFS(preTmpl, t.template)
 		if err != nil {
 			panic(err)
 		}
 
-		err = os.WriteFile(specPath, b, 0744)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-	}
+		if _, err = os.Stat(t.path); err != nil {
+			cmd.logger.Debug(fmt.Sprintf("empty %s, add %s", t.name, t.path))
+			buf := bytes.NewBuffer(nil)
+			if err = tmpl.Execute(buf, schema); err != nil {
+				panic(err)
+			}
 
-	// @TODO remove duplicate code
-	handlerTemplate, err := template.ParseFS(preTmpl, "templates/project/internal/api/http/handler/handler.gotmpl")
-	if err != nil {
-		panic(err)
-	}
+			b, err := format.Source(buf.Bytes())
+			if err != nil {
+				cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
 
-	handlerDirPath := fmt.Sprintf("%s/%s/http/handler", rootDir, cfg.OutputPath)
-	handlerPath := fmt.Sprintf("%s/%s", handlerDirPath, "/handler.go")
-	if _, err = os.Stat(handlerPath); cfg.OpenApiPath != "" && err != nil {
-		cmd.logger.Debug("empty handler, add " + specPath)
-		buf := bytes.NewBuffer(nil)
-		if err = handlerTemplate.Execute(buf, mainSchema); err != nil {
-			panic(err)
-		}
+				return err
+			}
 
-		b, err := format.Source(buf.Bytes())
-		if err != nil {
-			cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
+			dirPath := path.Dir(t.path)
 
-			return err
-		}
+			// Create the directories if they don't exist
+			err = os.MkdirAll(dirPath, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
 
-		// Create the directories if they don't exist
-		err = os.MkdirAll(handlerDirPath, os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-
-		err = os.WriteFile(handlerPath, b, 0744)
-		if err != nil {
-			fmt.Println(err)
-			return err
+			err = os.WriteFile(t.path, b, 0744)
+			if err != nil {
+				cmd.logger.Error(fmt.Sprintf("os.WriteFile(\"%s\", b, 0744)", t.path), zap.Error(err))
+				return err
+			}
 		}
 	}
 
@@ -191,7 +154,7 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 		return err
 	}
 
-	cmd.logger.Debug("output path: " + output)
+	cmd.logger.Debug("output Path: " + output)
 
 	sch := PreSchema{
 		SchemaPath: schemaImport,

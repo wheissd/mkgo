@@ -5,7 +5,7 @@ import (
 	"github.com/wheissd/mkgo/gen/config"
 	"go.uber.org/fx"
 	{{ range .Imports }}
-		"{{ . }}"
+		{{ if ne .As nil }}{{ .As }} {{ end }}"{{ .Path }}"
 	{{- end }}
 )
 

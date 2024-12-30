@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -17,12 +18,6 @@ import (
 	"github.com/wheissd/mkgo/internal/parse"
 	"go.uber.org/zap"
 )
-
-type runInfo struct {
-	EntHash string `json:"ent_hash"`
-}
-
-const runInfoFile = "mkgo/run_info.json"
 
 func (cmd *cmd) generate(ctx *cli.Context) error {
 	var cfg config.GenConfig
@@ -54,6 +49,13 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 		}
 	}
 
+	if ctx.Value("skipDepCheck") == nil || ctx.Value("skipDepCheck") == false {
+		err := cmd.checkDependencies(&ri)
+		if err != nil {
+			cmd.logger.Error("cmd.checkDependencies()", zap.Error(err))
+		}
+	}
+
 	entPath := "./internal/ent"
 	if internalMode {
 		entPath = "./ent"
@@ -74,18 +76,40 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 		apigenDelim = "/"
 	}
 
-	if ri.EntHash != hash {
+	cfgHash, err := dirhash.Hash1([]string{"mkgo_config.yaml"}, func(name string) (io.ReadCloser, error) {
+		return os.Open("mkgo_config.yaml")
+	})
+	if err != nil {
+		return err
+	}
+
+	if !ri.entHashCheck(hash) {
 		cmd.logger.Debug("generate ent")
 		// gen ent
 		entPath := "./ent/cmd"
 		if !internalMode {
 			entPath = "./internal/ent/cmd"
 		}
-		err = cmd.runCmd("go run " + entPath)
+		err = cmd.runVCmd("go run " + entPath)
 		if err != nil {
 			return err
 		}
 
+		err = cmd.runVCmd("atlas migrate hash --dir file://internal/ent/migrate/migrations")
+		if err != nil {
+			return err
+		}
+
+		err = cmd.runVCmd("atlas migrate diff " +
+			"--dir file://internal/ent/migrate/migrations " +
+			"--to ent://internal/ent/schema " +
+			"--schema dev " +
+			"--dev-url docker://postgres/15/test?search_path=public")
+		if err != nil {
+			return err
+		}
+	}
+	if !ri.hashCheck(hash, cfgHash) {
 		// gen pre
 		for _, cfgItem := range cfg.APIs {
 			preOutput := "./" + rootDir + apigenDelim + cfgItem.OutputPath + "/cmd/apigen"
@@ -104,23 +128,9 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 				return err
 			}
 		}
-
-		err = cmd.runCmd("atlas migrate hash --dir file://internal/ent/migrate/migrations")
-		if err != nil {
-			return err
-		}
-
-		err = cmd.runCmd("atlas migrate diff " +
-			"--dir file://internal/ent/migrate/migrations " +
-			"--to ent://internal/ent/schema " +
-			"--schema dev " +
-			"--dev-url docker://postgres/15/test?search_path=public")
-		if err != nil {
-			return err
-		}
-
-		ri.EntHash = hash
 	}
+	ri.EntHash = hash
+	ri.CfgHash = cfgHash
 
 	cfgDir := "internal/config"
 	if internalMode {
@@ -133,7 +143,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 
 	for _, apiCfg := range cfg.APIs {
 		apigenPath := fmt.Sprintf("%s/%s%s%s/cmd/apigen", pkgInfo.Pkg, rootDir, apigenDelim, apiCfg.OutputPath)
-		err = cmd.runCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent" + " -mode=" + apiCfg.Mode)
+		err = cmd.runVCmd("go run " + apigenPath + " -ent_path=" + pkgInfo.RootDir + "/ent" + " -mode=" + apiCfg.Mode)
 		if err != nil {
 			return err
 		}
@@ -143,7 +153,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 			//if !internalMode {
 			//	ogenTarget = "internal/" + ogenTarget
 			//}
-			err = cmd.runCmd("go run github.com/ogen-go/ogen/cmd/ogen@latest --package " +
+			err = cmd.runVCmd("ogen --package " +
 				"ogen --target " + ogenTarget + " --clean openapi/" + apiCfg.Mode + ".json --convenient-errors on")
 			if err != nil {
 				return err
@@ -163,7 +173,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 					protoFiles = append(protoFiles, file.Name())
 				}
 			}
-			err = cmd.runCmd("protoc --proto_path proto --go_out=. --go-grpc_out=. --go-grpc_opt=paths=import " + strings.Join(protoFiles, " "))
+			err = cmd.runVCmd("protoc --proto_path proto --go_out=. --go-grpc_out=. --go-grpc_opt=paths=import " + strings.Join(protoFiles, " "))
 			if err != nil {
 				return err
 			}
@@ -174,13 +184,13 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 		return err
 	}
 	cmd.logger.Debug("runInfo write",
-		zap.String("path", runInfoFile),
+		zap.String("Path", runInfoFile),
 		zap.ByteString("runInfo", runInfoBytes),
 	)
 	if err = os.WriteFile(runInfoFile, runInfoBytes, 0744); err != nil {
 		return err
 	}
-	cmd.logger.Debug("runInfo write success", zap.String("path", runInfoFile))
+	cmd.logger.Debug("runInfo write success", zap.String("Path", runInfoFile))
 
 	return nil
 }
@@ -203,11 +213,25 @@ func cleanGrpcDir(rootDir string, cfg config.GenConfigItem) error {
 	return nil
 }
 
+func (cmd *cmd) logRed(s string) {
+	cmd.logger.Info("\u001b[32m" + s + "\u001b[0m")
+}
+
 func (cmd *cmd) logGreen(s string) {
 	cmd.logger.Info("\u001b[32m" + s + "\u001b[0m")
 }
 
-func (cmd *cmd) runCmd(cmdStr string) error {
+// runVCmd v As void
+func (cmd *cmd) runVCmd(cmdStr string) error {
+	output, err := cmd.runCmd(cmdStr)
+	if err != nil {
+		return err
+	}
+	fmt.Print(string(output))
+	return nil
+}
+
+func (cmd *cmd) runCmd(cmdStr string) ([]byte, error) {
 	cmd.logGreen(cmdStr)
 	cmdSplitted := strings.Split(cmdStr, " ")
 	c := exec.Command(cmdSplitted[0], cmdSplitted[1:]...)
@@ -220,11 +244,10 @@ func (cmd *cmd) runCmd(cmdStr string) error {
 				cmd.logger.Error("run cmd err", zap.Error(err))
 			}
 			fmt.Println(string(e.Stderr))
-			return e
+			return nil, e
 		}
-		cmd.logger.Error("runCmd err", zap.Error(err), zap.ByteString("output", output))
-		return err
+		cmd.logger.Error("runVCmd err", zap.Error(err), zap.ByteString("output", output))
+		return nil, err
 	}
-	fmt.Print(string(output))
-	return nil
+	return output, nil
 }

@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}rest_client/ogen"
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}rest_client/service"
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}config"
-	"{{ .Module }}/{{ .Path }}{{ if not .InternalMode }}internal/{{ end }}ent/gen"
+{{- $pkg := .Pkg }}
+	"{{ $pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/ogen"
+	"{{ $pkg }}/{{ .RootPkg }}{{ .Cfg.OutputPath }}/service"
+	"{{ $pkg }}/{{ .RootPkg }}config"
+	"{{ $pkg }}/{{ .RootPkg }}ent/gen"
 	"go.uber.org/zap"
 )
 

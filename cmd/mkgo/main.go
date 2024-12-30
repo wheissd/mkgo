@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
@@ -12,7 +14,9 @@ import (
 const toolName = "mkgo"
 
 func main() {
-	cmd := cmd{}
+	cmd := cmd{
+		depCheckClient: &http.Client{Timeout: 5 * time.Second},
+	}
 	cmds := []*cli.Command{
 		{
 			Name:   "init",
@@ -28,6 +32,11 @@ func main() {
 			Name:   "generate",
 			Usage:  "update project files",
 			Action: cmd.generate,
+		},
+		{
+			Name:   "version",
+			Usage:  "get tool version",
+			Action: cmd.version,
 		},
 	}
 	for i := range cmds {

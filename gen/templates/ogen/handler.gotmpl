@@ -142,7 +142,7 @@ func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode 
 			sParams.ItemsPerPage.Set(params.ItemsPerPage.Value)
 		}
 		{{- range .Fields }}
-			{{- if needFilter $sch . }}
+			{{- if and (needFilter $sch .) (not .Edge) }}
 				if v, ok := params.Filter{{ pascal .Name }}.Get(); ok {
 					sParams.Filter{{ pascal .Name }}.Set(v)
 				}
