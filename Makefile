@@ -11,6 +11,9 @@ hotfix: confirm
 	git tag ${NEXT_HOTFIX_TAG}
 	git push origin ${NEXT_HOTFIX_TAG}
 
+write-version:
+	echo $(NEXT_TAG) > cmd/mkgo/version
+
 confirm:
 	@if [[ -z "$(CI)" ]]; then \
 		read -p "⚠ Are you sure? [y/N] > " -r ; \
@@ -22,5 +25,5 @@ confirm:
 		fi \
 	fi
 
-build:
+build: write-version
 	go build -o ${GOPATH}/bin/mkgo ./cmd/mkgo

@@ -19,7 +19,7 @@ type Handler struct {
 
 func New(
 	client *gen.Client,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	config config.Config,
 	svc *service.Service,
 ) *Handler {

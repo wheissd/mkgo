@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	config2 "github.com/wheissd/mkgo/gen/config"
 	"github.com/wheissd/mkgo/internal/config"
 	"github.com/wheissd/mkgo/internal/parse"
-	"go.uber.org/zap"
 )
 
 func (cmd *cmd) generate(ctx *cli.Context) error {
@@ -37,7 +37,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	unmarshalRunInfo := true
 	if err != nil {
 		if err != os.ErrNotExist && !errors.Is(err, fs.ErrNotExist) {
-			cmd.logger.Error("start reading runInfoFile err", zap.Error(err))
+			cmd.logger.Error("start reading runInfoFile err", slog.Any("error", err))
 			return err
 		}
 		unmarshalRunInfo = false
@@ -52,7 +52,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	if ctx.Value("skipDepCheck") == nil || ctx.Value("skipDepCheck") == false {
 		err := cmd.checkDependencies(&ri)
 		if err != nil {
-			cmd.logger.Error("cmd.checkDependencies()", zap.Error(err))
+			cmd.logger.Error("cmd.checkDependencies()", slog.Any("error", err))
 		}
 	}
 
@@ -64,7 +64,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	cmd.logger.Debug("mkgo_hash", zap.String("prev", ri.EntHash), zap.String("current", hash))
+	cmd.logger.Debug("mkgo_hash", slog.String("prev", ri.EntHash), slog.String("current", hash))
 
 	rootDir := pkgInfo.RootDir
 	apigenDelim := ""
@@ -109,7 +109,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 			return err
 		}
 	}
-	if !ri.hashCheck(hash, cfgHash) {
+	if !ri.hashCheck(hash, cfgHash) || ctx.IsSet("f") {
 		// gen pre
 		for _, cfgItem := range cfg.APIs {
 			preOutput := "./" + rootDir + apigenDelim + cfgItem.OutputPath + "/cmd/apigen"
@@ -118,10 +118,10 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 			cmd.logGreen("run cmd.pre")
 			cmd.logger.Debug(
 				"run cmd.pre",
-				zap.String("preOutput", preOutput),
-				zap.String("rootDir", rootDir),
-				zap.String("schemaPath", schemaPath),
-				zap.String("genPath", genPath),
+				slog.String("preOutput", preOutput),
+				slog.String("rootDir", rootDir),
+				slog.String("schemaPath", schemaPath),
+				slog.String("genPath", genPath),
 			)
 			err = cmd.pre(preOutput, schemaPath, genPath, rootDir, cfgItem)
 			if err != nil {
@@ -138,7 +138,7 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 	}
 
 	cmd.logGreen("genConfig")
-	cmd.logger.Debug("genConfig", zap.String("target", cfgDir))
+	cmd.logger.Debug("genConfig", slog.String("target", cfgDir))
 	cmd.genConfig(cfgDir)
 
 	for _, apiCfg := range cfg.APIs {
@@ -184,13 +184,13 @@ func (cmd *cmd) generate(ctx *cli.Context) error {
 		return err
 	}
 	cmd.logger.Debug("runInfo write",
-		zap.String("Path", runInfoFile),
-		zap.ByteString("runInfo", runInfoBytes),
+		slog.String("Path", runInfoFile),
+		slog.String("runInfo", string(runInfoBytes)),
 	)
 	if err = os.WriteFile(runInfoFile, runInfoBytes, 0744); err != nil {
 		return err
 	}
-	cmd.logger.Debug("runInfo write success", zap.String("Path", runInfoFile))
+	cmd.logger.Debug("runInfo write success", slog.String("Path", runInfoFile))
 
 	return nil
 }
@@ -241,12 +241,12 @@ func (cmd *cmd) runCmd(cmdStr string) ([]byte, error) {
 		if errors.As(err, &e) {
 			//cmd.logger.Debug("run cmd err")
 			if strings.Contains(cmdStr, "apigen") {
-				cmd.logger.Error("run cmd err", zap.Error(err))
+				cmd.logger.Error("run cmd err", slog.Any("error", err))
 			}
 			fmt.Println(string(e.Stderr))
 			return nil, e
 		}
-		cmd.logger.Error("runVCmd err", zap.Error(err), zap.ByteString("output", output))
+		cmd.logger.Error("runVCmd err", slog.Any("error", err), slog.String("output", string(output)))
 		return nil, err
 	}
 	return output, nil

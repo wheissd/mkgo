@@ -175,6 +175,7 @@ func (op *parseOp) parseField(field ent.Field) entity.Field {
 	required := !field.Descriptor().Optional && field.Descriptor().Default == nil
 	f := entity.Field{
 		Name:     field.Descriptor().Name,
+		Primary:  field.Descriptor().Unique,
 		Required: required,
 		Optional: field.Descriptor().Optional,
 		Openapi: entity.Openapi{

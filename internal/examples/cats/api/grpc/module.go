@@ -17,14 +17,14 @@ var Module = fx.Module(
 	fx.Invoke(
 		func(
 			impl *DefaultModelServiceImpl,
-			logger *zap.Logger,
+			logger *slog.Logger,
 			grpcCfg config.GRPC,
 		) {
 			srv := grpc.NewServer()
 			RegisterDefaultModelServiceServer(srv, impl)
 			listener, err := net.Listen("tcp", grpcCfg.HTTP.Addr+":"+grpcCfg.HTTP.Port)
 			if err != nil {
-				logger.Fatal("failed to listen", zap.Error(err))
+				logger.Fatal("failed to listen", slog.Any("error", err))
 			}
 			err = srv.Serve(listener)
 		},

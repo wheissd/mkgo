@@ -11,7 +11,7 @@ import (
 )
 
 func DI() []fx.Option {
-	logger, err := zap.NewDevelopment()
+	logger, err := slog.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
@@ -22,7 +22,7 @@ func DI() []fx.Option {
 			func() context.Context {
 				return context.Background()
 			},
-			func() *zap.Logger {
+			func() *slog.Logger {
 				return logger
 			},
 		),

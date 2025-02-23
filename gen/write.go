@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"go/format"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"text/template"
 
 	"github.com/wheissd/mkgo/internal/entity"
-	"go.uber.org/zap"
 )
 
 type writeContext struct {
@@ -45,7 +45,7 @@ var (
 	tmpl embed.FS
 )
 
-func writeGoFiles(logger *zap.Logger, sch *entity.Schema) {
+func writeGoFiles(logger *slog.Logger, sch *entity.Schema) {
 	cfg := []*templateConfig{
 		{
 			file: "service/service.gotmpl",

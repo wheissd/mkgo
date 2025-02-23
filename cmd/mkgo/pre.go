@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path"
 	"sort"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/wheissd/mkgo/internal/config"
 	"github.com/wheissd/mkgo/internal/parse"
-	"go.uber.org/zap"
 )
 
 var (
@@ -104,7 +104,7 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 
 			b, err := format.Source(buf.Bytes())
 			if err != nil {
-				cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
+				cmd.logger.Error("format.Source(buf.Bytes())", slog.Any("error", err))
 
 				return err
 			}
@@ -119,7 +119,7 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 
 			err = os.WriteFile(t.path, b, 0744)
 			if err != nil {
-				cmd.logger.Error(fmt.Sprintf("os.WriteFile(\"%s\", b, 0744)", t.path), zap.Error(err))
+				cmd.logger.Error(fmt.Sprintf("os.WriteFile(\"%s\", b, 0744)", t.path), slog.Any("error", err))
 				return err
 			}
 		}
@@ -133,13 +133,13 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 	schemaDir := wdLevel + schemaPath
 	cmd.logger.Debug(
 		"parser.ParseDir",
-		zap.String("wd", wd),
-		zap.String("schemaImport", schemaImport),
-		zap.String("wdLevel", wdLevel),
-		zap.String("schemaDir", schemaDir),
-		zap.String("output", output),
-		zap.String("schemaPath", schemaPath),
-		zap.String("genPath", genPath),
+		slog.String("wd", wd),
+		slog.String("schemaImport", schemaImport),
+		slog.String("wdLevel", wdLevel),
+		slog.String("schemaDir", schemaDir),
+		slog.String("output", output),
+		slog.String("schemaPath", schemaPath),
+		slog.String("genPath", genPath),
 	)
 
 	// parse schema files
@@ -150,7 +150,7 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 		0,
 	)
 	if err != nil {
-		cmd.logger.Error("parser.ParseDir Schema", zap.Error(err))
+		cmd.logger.Error("parser.ParseDir Schema", slog.Any("error", err))
 		return err
 	}
 
@@ -186,13 +186,13 @@ func (cmd *cmd) pre(output, schemaPath, genPath, rootDir string, cfg config.GenC
 
 	err = preTemplate.Execute(buf, sch)
 	if err != nil {
-		cmd.logger.Error("preTemplate.Execute(buf, sch)", zap.Error(err))
+		cmd.logger.Error("preTemplate.Execute(buf, sch)", slog.Any("error", err))
 		return err
 	}
 
 	b, err := format.Source(buf.Bytes())
 	if err != nil {
-		cmd.logger.Error("format.Source(buf.Bytes())", zap.Error(err))
+		cmd.logger.Error("format.Source(buf.Bytes())", slog.Any("error", err))
 
 		return err
 	}

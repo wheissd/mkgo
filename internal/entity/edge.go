@@ -23,6 +23,7 @@ type Edge struct {
 	Type       EdgeType
 	Fields     []Field
 	Inverse    bool
+	HasField   bool
 	ToOne      bool
 	WithRead   bool
 	WithCreate bool

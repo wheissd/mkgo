@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 	"strings"
@@ -15,11 +16,10 @@ import (
 	"github.com/wheissd/mkgo/internal/cases"
 	"github.com/wheissd/mkgo/internal/config"
 	"github.com/wheissd/mkgo/internal/entity"
+	logger2 "github.com/wheissd/mkgo/internal/logger"
 	"github.com/wheissd/mkgo/internal/parse"
 	"github.com/wheissd/mkgo/lib"
 	genoptions "github.com/wheissd/mkgo/options"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var fns = template.FuncMap{
@@ -83,27 +83,18 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 	cfgMode := flag.String("mode", "default", "api gen mode, specified in mkgo_config")
 	flag.Parse()
 
-	pe := zap.NewDevelopmentEncoderConfig()
-	pe.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	pe.EncodeTime = zapcore.ISO8601TimeEncoder
-	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(pe),
-		zapcore.AddSync(os.Stdout),
-		zap.DebugLevel,
-	)
-
-	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
+	logger := logger2.Get(slog.LevelError)
 	defer func() {
 		err := recover()
 		if err != nil {
 			if e, ok := err.(error); ok {
 				logger.Error(
 					"recover()",
-					zap.Error(e),
-					zap.Bool("isErr", true),
+					slog.Any("error", e),
+					slog.Bool("isErr", true),
 				)
 			} else {
-				logger.Error("recover()", zap.Any("err", err), zap.Bool("isErr", false))
+				logger.Error("recover()", slog.Any("err", err), slog.Bool("isErr", false))
 			}
 			return
 		}
@@ -117,7 +108,7 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 	} else {
 		cfg.Parse(*cfgPath)
 	}
-	logger.Info("start apigen", zap.Any("cfg", cfg))
+	logger.Info("start apigen", slog.Any("cfg", cfg))
 	*entPath = strings.TrimPrefix(*entPath, "/")
 
 	for _, apiCfg := range cfg.APIs {
@@ -150,7 +141,7 @@ func Gen(entities []lib.PreEntity, options ...genoptions.GenOption) {
 	}
 }
 
-func makeSchema(logger *zap.Logger, cfg config.GenConfigItem, entPath *string) *entity.Schema {
+func makeSchema(logger *slog.Logger, cfg config.GenConfigItem, entPath *string) *entity.Schema {
 	wd, _ := os.Getwd()
 	pkg, lvl := parse.GetModLevel(wd, 0)
 	wdSplitted := strings.Split(wd, "/")
@@ -165,10 +156,10 @@ func makeSchema(logger *zap.Logger, cfg config.GenConfigItem, entPath *string) *
 	}
 	logger.Debug(
 		"makeSchema",
-		zap.String("wd", wd),
-		zap.String("entPath", *entPath),
-		zap.String("pkg", pkg),
-		zap.String("rootPkg", rootPkg),
+		slog.String("wd", wd),
+		slog.String("entPath", *entPath),
+		slog.String("pkg", pkg),
+		slog.String("rootPkg", rootPkg),
 	)
 	sch := &entity.Schema{
 		Cfg:          cfg,
@@ -181,7 +172,7 @@ func makeSchema(logger *zap.Logger, cfg config.GenConfigItem, entPath *string) *
 	return sch
 }
 
-func oapi(logger *zap.Logger, sch *entity.Schema, options ...genoptions.GenOption) {
+func oapi(logger *slog.Logger, sch *entity.Schema, options ...genoptions.GenOption) {
 	logger.Debug("gen openapi")
 	buf := bytes.NewBuffer(nil)
 	externalSchema := []genoptions.OpenapiSchemaOption{}

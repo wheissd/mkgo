@@ -12,12 +12,12 @@ import (
 
 type Service struct {
 	client                 *gen.Client
-	logger                 *zap.Logger
+	logger                 *slog.Logger
 	HumanListQueryModifier HumanQueryModifier
 	HumanReadQueryModifier HumanQueryModifier
 }
 
-func New(client *gen.Client, logger *zap.Logger) *Service {
+func New(client *gen.Client, logger *slog.Logger) *Service {
 	return &Service{
 		client:                 client,
 		logger:                 logger,

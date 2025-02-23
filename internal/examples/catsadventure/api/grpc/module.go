@@ -23,7 +23,7 @@ var Module = fx.Module(
 			catImpl *CatServiceImpl,
 			fathercatImpl *FatherCatServiceImpl,
 			kittenImpl *KittenServiceImpl,
-			logger *zap.Logger,
+			logger *slog.Logger,
 			grpcCfg config.GRPC,
 		) {
 			srv := grpc.NewServer()
@@ -33,7 +33,7 @@ var Module = fx.Module(
 			RegisterKittenServiceServer(srv, kittenImpl)
 			listener, err := net.Listen("tcp", grpcCfg.HTTP.Addr+":"+grpcCfg.HTTP.Port)
 			if err != nil {
-				logger.Fatal("failed to listen", zap.Error(err))
+				logger.Fatal("failed to listen", slog.Any("error", err))
 			}
 			err = srv.Serve(listener)
 		},

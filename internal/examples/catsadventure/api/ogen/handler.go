@@ -14,12 +14,12 @@ import (
 type HandlerImpl struct {
 	client  *gen.Client
 	service *service.Service
-	logger  *zap.Logger
+	logger  *slog.Logger
 }
 
 func NewHandler(
 	client *gen.Client,
-	srvc *service.Service, logger *zap.Logger,
+	srvc *service.Service, logger *slog.Logger,
 ) *HandlerImpl {
 	return &HandlerImpl{
 		client:  client,
@@ -29,7 +29,7 @@ func NewHandler(
 }
 
 func (h *HandlerImpl) NewError(ctx context.Context, err error) *ErrorStatusCode {
-	h.logger.Error("Handler error", zap.Error(err))
+	h.logger.Error("Handler error", slog.Any("error", err))
 	var errStatusCode *ErrorStatusCode
 	if errors.As(err, &errStatusCode) {
 		return errStatusCode

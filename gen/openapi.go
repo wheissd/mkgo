@@ -2,16 +2,16 @@ package gen
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/samber/lo"
 	"github.com/wheissd/mkgo/internal/config"
 	"github.com/wheissd/mkgo/internal/entity"
 	"github.com/wheissd/mkgo/options"
-	"go.uber.org/zap"
 )
 
-func genOpenapi(logger *zap.Logger, sch *entity.Schema, cfg config.GenConfigItem, externalConfig ...options.OpenapiSchemaOption) openapi3.T {
+func genOpenapi(logger *slog.Logger, sch *entity.Schema, cfg config.GenConfigItem, externalConfig ...options.OpenapiSchemaOption) openapi3.T {
 	paths := openapi3.Paths{}
 	schemas := openapi3.Schemas{}
 	for _, entity := range sch.Entities {

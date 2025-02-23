@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/wheissd/mkgo/internal/logger"
+
+	"log/slog"
 )
 
 const toolName = "mkgo"
@@ -32,6 +33,12 @@ func main() {
 			Name:   "generate",
 			Usage:  "update project files",
 			Action: cmd.generate,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  "f",
+					Usage: "force regenerate all",
+				},
+			},
 		},
 		{
 			Name:   "version",
@@ -57,33 +64,34 @@ func main() {
 		},
 		Commands: cmds}).Run(os.Args)
 	if err != nil {
-		cmd.logger.Error("run failed", zap.Error(err))
+		cmd.logger.Error("run failed", slog.Any("error", err))
 	}
 }
 
 func (cmd *cmd) initLogger(ctx *cli.Context) error {
-	logLevel := zap.ErrorLevel
+	logLevel := slog.LevelError
 	if ctx.IsSet("d") {
-		logLevel = zap.DebugLevel
+		logLevel = slog.LevelDebug
 	}
-	pe := zap.NewDevelopmentEncoderConfig()
-	pe.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	pe.EncodeTime = zapcore.ISO8601TimeEncoder
-	core := zapcore.NewCore(
-		zapcore.NewConsoleEncoder(pe),
-		zapcore.AddSync(os.Stdout),
-		logLevel,
-	)
 
-	cmd.noTraceLogger = zap.New(core, zap.AddCaller())
-	cmd.logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
+	//pe := slog.NewDevelopmentEncoderConfig()
+	//pe.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	//pe.EncodeTime = zapcore.ISO8601TimeEncoder
+	//core := zapcore.NewCore(
+	//	zapcore.NewConsoleEncoder(pe),
+	//	zapcore.AddSync(os.Stdout),
+	//	logLevel,
+	//)
+
+	//cmd.noTraceLogger = slog.New(core, slog.AddCaller())
+	cmd.logger = logger.Get(logLevel)
 	return nil
 }
 
 func (cmd *cmd) logErr(ctx *cli.Context) error {
 	err := ctx.Err()
 	if err != nil {
-		cmd.logger.Error("run err", zap.Error(err))
+		cmd.logger.Error("run err", slog.Any("error", err))
 	}
 	return nil
 }

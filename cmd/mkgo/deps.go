@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/go-faster/errors"
-	"go.uber.org/zap"
 )
 
 type githubReleases struct {
@@ -133,11 +133,11 @@ func (cmd *cmd) checkDependencies(info *runInfo) error {
 	for _, dep := range cmd.deps() {
 		if dep.checkHasNewVersion != nil {
 			if err := dep.checkHasNewVersion(); err != nil {
-				cmd.logger.Error("dep.checkHasNewVersion()", zap.Error(err))
+				cmd.logger.Error("dep.checkHasNewVersion()", slog.Any("error", err))
 			}
 		}
 		if err := cmd.checkVersion(dep); err != nil {
-			cmd.logger.Error("cmd.checkVersion(dep)", zap.Error(err))
+			cmd.logger.Error("cmd.checkVersion(dep)", slog.Any("error", err))
 		}
 	}
 

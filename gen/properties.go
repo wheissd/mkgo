@@ -1,9 +1,10 @@
 package gen
 
 import (
+	"log/slog"
+
 	. "github.com/getkin/kin-openapi/openapi3"
 	"github.com/wheissd/mkgo/internal/entity"
-	"go.uber.org/zap"
 )
 
 func baseProp(f entity.Field) *SchemaRef {
@@ -23,12 +24,12 @@ func baseProp(f entity.Field) *SchemaRef {
 	return prop
 }
 
-func readProperties(logger *zap.Logger, sch *entity.Schema, e *entity.Entity) Schemas {
+func readProperties(logger *slog.Logger, sch *entity.Schema, e *entity.Entity) Schemas {
 	res := Schemas{}
 	for _, f := range e.Fields {
 		logger.Debug("fields")
 		if isFieldPublic(sch, f) {
-			logger.Debug("field is public", zap.String("name", f.Name))
+			logger.Debug("field is public", slog.String("name", f.Name))
 			res[f.Name] = baseProp(f)
 		}
 	}

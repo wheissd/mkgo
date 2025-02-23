@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"text/template"
 
 	"github.com/wheissd/mkgo/internal/config"
 	"github.com/wheissd/mkgo/internal/entity"
-	"go.uber.org/zap"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	protoTmpl embed.FS
 )
 
-func proto(logger *zap.Logger, cfg config.GenConfigItem, sch *entity.Schema) {
+func proto(logger *slog.Logger, cfg config.GenConfigItem, sch *entity.Schema) {
 	logger.Debug("gen proto")
 	fPath := "templates/proto/entities.prototmpl"
 	fName := "entities.prototmpl"

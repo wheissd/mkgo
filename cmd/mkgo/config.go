@@ -9,13 +9,13 @@ import (
 	"go/parser"
 	"go/token"
 	"html/template"
+	"log/slog"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/samber/lo"
-	"go.uber.org/zap"
 )
 
 var (
@@ -68,13 +68,13 @@ func (cmd *cmd) genConfig(target string) {
 			}
 			for _, decl := range file.Decls {
 				if gDecl, ok := decl.(*ast.GenDecl); ok {
-					cmd.logger.Debug("decl", zap.String("decl", gDecl.Tok.String()))
+					cmd.logger.Debug("decl", slog.String("decl", gDecl.Tok.String()))
 					switch gDecl.Tok {
 					case token.IMPORT:
-						cmd.logger.Debug("decl", zap.Any("specs", gDecl.Specs))
+						cmd.logger.Debug("decl", slog.Any("specs", gDecl.Specs))
 						for _, spec := range gDecl.Specs {
 							if importSpec, ok := spec.(*ast.ImportSpec); ok {
-								cmd.logger.Debug("decl", zap.Any("importSpec", spec))
+								cmd.logger.Debug("decl", slog.Any("importSpec", spec))
 								imp := importSpec.Path.Value
 								imD := importData{Path: strings.Trim(imp, "\"")}
 								if importSpec.Name != nil {
@@ -129,7 +129,7 @@ func (cmd *cmd) genConfig(target string) {
 
 	buf := bytes.NewBuffer(nil)
 
-	cmd.logger.Debug("imports", zap.Any("config imports", gData.Imports))
+	cmd.logger.Debug("imports", slog.Any("config imports", gData.Imports))
 	err = configTemplate.Execute(buf, gData)
 	if err != nil {
 		panic(err)
@@ -162,7 +162,7 @@ func (cmd *cmd) genConfig(target string) {
 //		}
 //		imDPathSplitted := strings.Split(imDPath, "/")
 //		s := imDPathSplitted[len(imDPathSplitted)-1]
-//		cmd.logger.Debug("getCorrectImportData", zap.String("s", s), zap.String("foundPath", foundPath))
+//		cmd.logger.Debug("getCorrectImportData", slog.String("s", s), slog.String("foundPath", foundPath))
 //		return s == foundPath
 //	}); found {
 //		s := imD.Path

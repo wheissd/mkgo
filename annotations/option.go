@@ -34,7 +34,7 @@ type globalOption interface {
 
 func setModeMap[T any](v bool, mm *modeMap, opts ...T) {
 	globalOpts := filterGlobalOptions(wrapOpts(opts...)...)
-	//logger.Get().Info("EnableReadMany", zap.Any("opts", globalOpts))
+	//logger.Get().Info("EnableReadMany", slog.Any("opts", globalOpts))
 
 	var preventDefault bool
 	if mm.mm == nil {

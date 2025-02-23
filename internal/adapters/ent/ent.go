@@ -57,6 +57,7 @@ func Parse(entities []lib.PreEntity, schema *entity.Schema, mode string) {
 				Fields:     edgeEnt.Fields,
 				Inverse:    edge.Descriptor().Inverse,
 				RefName:    edge.Descriptor().RefName,
+				HasField:   edge.Descriptor().Field != "",
 				ToOne:      toOne,
 			}
 

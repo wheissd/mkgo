@@ -5,10 +5,10 @@ import (
 )
 
 type Service struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
-func New(logger *zap.Logger) *Service {
+func New(logger *slog.Logger) *Service {
 	return &Service{
 		logger: logger,
 	}

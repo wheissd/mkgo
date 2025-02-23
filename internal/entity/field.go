@@ -8,6 +8,7 @@ import (
 
 type Field struct {
 	Name       string
+	Primary    bool
 	Required   bool
 	Optional   bool
 	Immutable  bool

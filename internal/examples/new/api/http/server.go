@@ -15,7 +15,7 @@ import (
 func start(
 	cfg config.Config,
 	srv *ogen.Server,
-	logger *zap.Logger,
+	logger *slog.Logger,
 	shutdowner fx.Shutdowner,
 ) {
 	go func() {
@@ -24,7 +24,7 @@ func start(
 			srv,
 		)
 		if err != nil {
-			logger.Error("unable to start admin server", zap.Error(err))
+			logger.Error("unable to start admin server", slog.Any("error", err))
 			err := shutdowner.Shutdown()
 			if err != nil {
 				panic(err)
@@ -33,7 +33,7 @@ func start(
 	}()
 }
 
-func srv(h *handler.Handler, logger *zap.Logger) *ogen.Server {
+func srv(h *handler.Handler, logger *slog.Logger) *ogen.Server {
 	// start listening.
 	srv, err := ogen.NewServer(
 		h,
@@ -46,16 +46,16 @@ func srv(h *handler.Handler, logger *zap.Logger) *ogen.Server {
 			}
 			w.WriteHeader(status)
 			logger.Debug("Method not allowed",
-				//zap.Int("http.status", resp.Type),
-				zap.String("uri", r.RequestURI),
-				zap.Any("method", r.Method),
+				//slog.Int("http.status", resp.Type),
+				slog.String("uri", r.RequestURI),
+				slog.Any("method", r.Method),
 			)
 		}),
 		ogen.WithErrorHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 			logger.Debug("Ogen error",
-				zap.String("uri", r.RequestURI),
-				zap.Any("method", r.Method),
-				zap.Error(err),
+				slog.String("uri", r.RequestURI),
+				slog.Any("method", r.Method),
+				slog.Any("error", err),
 			)
 		}),
 	)

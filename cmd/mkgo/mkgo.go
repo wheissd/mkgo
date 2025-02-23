@@ -1,13 +1,11 @@
 package main
 
 import (
+	"log/slog"
 	"net/http"
-
-	"go.uber.org/zap"
 )
 
 type cmd struct {
-	logger         *zap.Logger
-	noTraceLogger  *zap.Logger
+	logger         *slog.Logger
 	depCheckClient *http.Client
 }

@@ -5,10 +5,10 @@ import (
 )
 
 type HandlerImpl struct {
-	logger *zap.Logger
+	logger *slog.Logger
 }
 
-func NewHandler(logger *zap.Logger,
+func NewHandler(logger *slog.Logger,
 ) *HandlerImpl {
 	return &HandlerImpl{
 		logger: logger,

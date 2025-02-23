@@ -118,18 +118,35 @@ type {{ .Name }}QueryEdges struct {
 	{{- end }}
 }
 
+const (
+{{- range .Fields }}
+{{- if not .Edge }}
+	{{ $e.Name }}OrderBy{{ pascal .Name }} = "{{ snake .Name }}"
+{{- end }}
+{{- end }}
+)
+
+var {{ .Name }}AcceptedOrderBy = []string{
+{{- range .Fields }}
+	{{- if not .Edge }}
+		{{ $e.Name }}OrderBy{{ pascal .Name }},
+	{{- end }}
+{{- end }}
+}
+
 type {{ .Name }}ListParams struct {
 	Page Opt[int]
 	ItemsPerPage Opt[int]
+	OrderBy []string
 	{{- range .Edges }}
-		{{- if .Inverse }}
+		{{- if and .Inverse .HasField }}
 		Filter{{ pascal .Name }}ID Opt[uuid.UUID]
 		{{- else }}
 		Filter{{ pascal .Name }}IDs Opt[[]uuid.UUID]
 		{{- end }}
 	{{- end }}
 	{{- range .Fields }}
-		{{- if  and (needFilter $sch .) (not .Edge) }}
+		{{- if not .Edge }}
 			Filter{{ pascal .Name }} Opt[{{ fieldType . }}]
 			{{- if .Type.Type.CanRange }}
 			FilterRangeFrom{{ pascal .Name }} Opt[{{ fieldType . }}]

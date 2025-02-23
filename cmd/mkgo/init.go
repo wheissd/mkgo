@@ -3,13 +3,13 @@ package main
 import (
 	"errors"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
 	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 	"github.com/wheissd/mkgo/internal/parse"
-	"go.uber.org/zap"
 )
 
 func (cmd *cmd) initProject(ctx *cli.Context) error {
@@ -29,8 +29,8 @@ func (cmd *cmd) initProject(ctx *cli.Context) error {
 	mod := parse.GetMod(path)
 	cmd.logger.Debug(
 		"start mkgo init",
-		zap.String("Path", path),
-		zap.String("mod", mod),
+		slog.String("Path", path),
+		slog.String("mod", mod),
 	)
 	pathContainsInternal := strings.Contains(path, "internal")
 	if pathContainsInternal {

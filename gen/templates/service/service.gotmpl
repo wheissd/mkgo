@@ -20,18 +20,22 @@ import (
     "go.uber.org/zap"
 )
 
+const (
+    errInvalidOrder = "invalid order by"
+)
+
 {{- define "listQuery" }}
     {{- $q := .QueryVar }}
     {{- $root := .Root }}
     {{- $e := .Entity }}
-    {{ .QueryVar }} := h.client.{{ .Entity.Name }}.Query()
+    {{ .QueryVar }} := s.client.{{ .Entity.Name }}.Query()
     {{- if .WithModifier }}
-    if err := h.{{ .Entity.Name }}ListQueryModifier(ctx, {{ .QueryVar }}); err != nil {
+    if err := s.{{ .Entity.Name }}ListQueryModifier(ctx, {{ .QueryVar }}); err != nil {
     return {{ .Entity.Name }}List{}, err
     }
     {{- end }}
     {{- range $i, $edge := .Entity.Edges }}
-        {{- if $edge.Inverse }}
+        {{- if and $edge.Inverse $edge.HasField }}
             if params.Filter{{ pascal $edge.Name }}ID.IsSet() {
             {{ $q }}.Where({{ lower $e.Name }}.{{ pascal $edge.FieldName }}EQ(params.Filter{{ pascal $edge.Name }}ID.Get()))
             }
@@ -42,7 +46,7 @@ import (
         {{- end }}
     {{- end }}
     {{- range .Entity.Fields }}
-        {{- if  and (needFilter $root .) (not .Edge) }}
+        {{- if not .Edge }}
             if params.Filter{{ pascal .Name }}.IsSet() {
                 {{ $q }}.Where({{ lower $e.Name }}.{{ pascal .Name }}EQ({{ if .Enum }}{{ camel $e.Name }}.{{ pascal .Name }}({{ end }}params.Filter{{ pascal .Name }}.Get(){{ if .Enum }}){{ end }}))
             }
@@ -55,6 +59,36 @@ import (
             }
             {{- end }}
         {{- end }}
+    {{- end }}
+    {{- if .WithModifier }}
+    if params.OrderBy != nil {
+        if len(params.OrderBy) > len({{ $e.Name }}AcceptedOrderBy) {
+            return {{ .Entity.Name }}List{}, errors.New(errInvalidOrder)
+        }
+        qOrderBy := make([]{{ lower $e.Name }}.OrderOption, 0, len(params.OrderBy))
+        for _, orderByRaw := range params.OrderBy {
+            orderBySplitted := strings.Split(orderByRaw, ":")
+            if len(orderBySplitted) != 2 && len(orderBySplitted) != 1 {
+                return {{ .Entity.Name }}List{}, errors.New(errInvalidOrder)
+            }
+            orderBy := orderBySplitted[0]
+            orderByDirection := sql.OrderAsc()
+            if len(orderBySplitted) == 2 && orderBySplitted[1] == "desc" {
+                orderByDirection = sql.OrderDesc()
+            }
+            if !lo.Contains({{ $e.Name }}AcceptedOrderBy, orderBy) {
+                return {{ .Entity.Name }}List{}, errors.New("invalid order by")
+            }
+        {{- range .Entity.Fields }}
+            {{- if not .Edge }}
+                if orderBy == {{ $e.Name }}OrderBy{{ pascal .Name }} {
+                    qOrderBy = append(qOrderBy, {{ lower $e.Name }}.By{{ pascal .Name }}(orderByDirection))
+                }
+            {{- end }}
+        {{- end }}
+        }
+        {{ $q }}.Order(qOrderBy...)
+    }
     {{- end }}
 {{- end }}
 
@@ -120,7 +154,7 @@ logger: logger,
 {{- end }}
 
 {{ range $i, $e := .Entities }}
-    func (h *Service) Create{{ .Name }}(ctx context.Context, req Create{{ .Name }}) ({{ .Name }}, error) {
+    func (s *Service) Create{{ .Name }}(ctx context.Context, req Create{{ .Name }}) ({{ .Name }}, error) {
         var (
             e *gen.{{ pascal .Name }}
             {{ if $e.HasCreateEdges }}
@@ -133,7 +167,7 @@ logger: logger,
             {{- end }}
         {{- end }}
         )
-        err := ent.WithTx(ctx, h.client, func(tx *gen.Tx) error {
+        err := ent.WithTx(ctx, s.client, func(tx *gen.Tx) error {
         b := tx.{{ .Name }}.Create()
 
         // Add all fields.
@@ -151,9 +185,9 @@ logger: logger,
 
         // Set relations
         {{- range $i, $f := .Edges }}
-            {{ if .Inverse }}
+            {{- if and .Inverse .HasField }}
                 b.Set{{ pascal .Name }}ID(req.{{ pascal .FieldName }})
-            {{ end }}
+            {{- end }}
         {{- end }}
         var err error
         // Persist to storage.
@@ -181,8 +215,8 @@ logger: logger,
         return response, nil
     }
 
-    func (h *Service) Update{{ .Name }}(ctx context.Context, id uuid.UUID, req Update{{ .Name }}) ({{ .Name }}, error) {
-        b := h.client.{{ .Name }}.UpdateOneID(id)
+    func (s *Service) Update{{ .Name }}(ctx context.Context, id uuid.UUID, req Update{{ .Name }}) ({{ .Name }}, error) {
+        b := s.client.{{ .Name }}.UpdateOneID(id)
 
         // Add all fields.
         {{- range $i, $f := .Fields }}
@@ -195,7 +229,7 @@ logger: logger,
         {{- end }}
         // Set relations.
         {{- range $i, $f := .Edges }}
-            {{ if .Inverse }}
+            {{ if and .Inverse .HasField }}
                 if req.{{ pascal .FieldName }}.IsSet() {
                 b.Set{{ pascal .Name }}ID(req.{{ pascal .FieldName }}.Get())
                 }
@@ -212,7 +246,7 @@ logger: logger,
         {{- end }}
 
         // Reload the entity to attach all eager-loaded edges.
-        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.ID(e.ID))
+        q := s.client.{{ .Name }}.Query().Where({{ lower .Name }}.ID(e.ID))
         e, err = q.Only(ctx)
         if err != nil {
         // This should never happen.
@@ -223,8 +257,8 @@ logger: logger,
     }
 
     // Delete{{ .Name }} handles DELETE /{{ lower .Name }}/{id} requests.
-    func (h *Service) Delete{{ .Name }}(ctx context.Context, id uuid.UUID) error {
-        err := h.client.{{ .Name }}.DeleteOneID(id).Exec(ctx)
+    func (s *Service) Delete{{ .Name }}(ctx context.Context, id uuid.UUID) error {
+        err := s.client.{{ .Name }}.DeleteOneID(id).Exec(ctx)
         if err != nil {
         switch {
         case gen.IsNotFound(err):
@@ -239,7 +273,7 @@ logger: logger,
         return nil
     }
 
-    func (h *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
+    func (s *Service) List{{ .Name }}(ctx context.Context, params {{ .Name }}ListParams) ({{ .Name }}List, error) {
         {{ template "listQuery" dict "Entity" $e "QueryVar" "q" "Root" $root "WithModifier" true }}
         {{ template "queryEdges" . }}
         page := 1
@@ -281,9 +315,9 @@ logger: logger,
         return response, nil
     }
 
-    func (h *Service) Read{{ .Name }}(ctx context.Context, params {{ .Name }}ReadParams) ({{ .Name }}, error) {
-        q := h.client.{{ .Name }}.Query().Where({{ lower .Name }}.IDEQ(params.ID))
-        if err := h.{{ .Name }}ReadQueryModifier(ctx, q); err != nil {
+    func (s *Service) Read{{ .Name }}(ctx context.Context, params {{ .Name }}ReadParams) ({{ .Name }}, error) {
+        q := s.client.{{ .Name }}.Query().Where({{ lower .Name }}.IDEQ(params.ID))
+        if err := s.{{ .Name }}ReadQueryModifier(ctx, q); err != nil {
             return {{ .Name }}{}, err
         }
         {{ template "queryEdges" . }}
